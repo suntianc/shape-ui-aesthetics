@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07100f">
+  <meta name="color-scheme" content="dark">
+  <title>Orison Yard — Commission a vessel</title>
+  <meta name="description" content="Configure a particle-built vessel by hull, drive, habitat, and livery, then commission it for launch.">
+  <style>
+    :root {
+      --night: #07100f;
+      --night-deep: #030807;
+      --glass: rgba(10, 24, 22, .82);
+      --glass-solid: #0b1715;
+      --bone: #e9e4d4;
+      --bone-soft: #b4b0a3;
+      --muted: #768781;
+      --line: rgba(215, 230, 222, .17);
+      --line-strong: rgba(215, 230, 222, .34);
+      --signal: #ff6b43;
+      --signal-dark: #2d1008;
+      --cool: #73ddc7;
+      --success: #b4e66e;
+      --warning: #ffd16a;
+      --shadow: rgba(0, 0, 0, .48);
+      --ease: cubic-bezier(.2, .75, .2, 1);
+      --gutter: clamp(1rem, 2.4vw, 2.5rem);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      min-width: 300px;
+      background: var(--night-deep);
+      color: var(--bone);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-width: 300px;
+      min-height: 100svh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 28% 42%, rgba(35, 90, 79, .18), transparent 38%),
+        linear-gradient(135deg, var(--night) 0 60%, #091412 100%);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; }
+    button, label { touch-action: manipulation; }
+    ::selection { color: var(--night-deep); background: var(--cool); }
+
+    :focus-visible {
+      outline: 3px solid var(--cool);
+      outline-offset: 4px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: .75rem;
+      left: .75rem;
+      padding: .75rem 1rem;
+      color: var(--night-deep);
+      background: var(--bone);
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: none; }
+
+    .yard-header {
+      position: fixed;
+      z-index: 30;
+      inset: 0 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+      min-height: 4.4rem;
+      padding: .65rem var(--gutter);
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(3, 8, 7, .97), rgba(3, 8, 7, .74));
+      backdrop-filter: blur(18px);
+    }
+
+    .yard-mark,
+    .berth-state,
+    .view-toggle,
+    .micro,
+    .field-index,
+    .choice-code,
+    .metric dt,
+    .stage-readout,
+    .manifest-id,
+    .progress-copy,
+    .status-token,
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: .68rem;
+      line-height: 1.35;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .yard-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: .75rem;
+      width: max-content;
+      color: var(--bone);
+    }
+
+    .yard-glyph {
+      position: relative;
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .yard-glyph::before,
+    .yard-glyph::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      background: currentColor;
+      transform: translate(-50%, -50%);
+    }
+    .yard-glyph::before { width: 1.45rem; height: 1px; }
+    .yard-glyph::after { width: 1px; height: 1.45rem; }
+    .yard-glyph i {
+      position: absolute;
+      top: .13rem;
+      right: .13rem;
+      width: .48rem;
+      height: .48rem;
+      border-radius: 50%;
+      background: var(--signal);
+      box-shadow: 0 0 1rem rgba(255, 107, 67, .8);
+    }
+
+    .berth-state {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      color: var(--bone-soft);
+    }
+    .berth-state::before {
+      content: "";
+      width: .46rem;
+      height: .46rem;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 .8rem rgba(180, 230, 110, .65);
+    }
+
+    .view-toggle {
+      justify-self: end;
+      min-height: 2.5rem;
+      padding: .55rem .8rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      color: var(--bone);
+      background: transparent;
+      cursor: pointer;
+      transition: border-color .2s ease, color .2s ease;
+    }
+    .view-toggle:hover { border-color: var(--cool); color: var(--cool); }
+
+    .commissioning {
+      min-height: 100svh;
+      padding-top: 4.4rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.75fr) minmax(21rem, .75fr);
+    }
+
+    .vessel-stage {
+      position: sticky;
+      top: 4.4rem;
+      height: calc(100svh - 4.4rem);
+      min-height: 36rem;
+      overflow: hidden;
+      border-right: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, transparent 49.94%, rgba(215, 230, 222, .08) 50%, transparent 50.06%),
+        linear-gradient(transparent 49.94%, rgba(215, 230, 222, .065) 50%, transparent 50.06%);
+      isolation: isolate;
+    }
+    .vessel-stage::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background:
+        linear-gradient(135deg, transparent 0 73%, rgba(115, 221, 199, .035) 73.2% 73.4%, transparent 73.6%),
+        radial-gradient(ellipse at 48% 50%, rgba(25, 67, 59, .3), transparent 54%);
+      pointer-events: none;
+    }
+
+    .stage-heading {
+      position: absolute;
+      z-index: 4;
+      top: clamp(1.4rem, 4vw, 3.5rem);
+      left: var(--gutter);
+      max-width: min(36rem, 70%);
+      pointer-events: none;
+    }
+
+    .micro {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      margin: 0 0 1rem;
+      color: var(--cool);
+    }
+    .micro::before {
+      content: "";
+      width: 2.2rem;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 12ch;
+      font-family: ui-serif, "Iowan Old Style", Baskerville, "Times New Roman", serif;
+      font-size: clamp(2.6rem, 5.3vw, 6rem);
+      font-weight: 400;
+      line-height: .86;
+      letter-spacing: -.055em;
+    }
+    h1 span { display: block; margin-left: .7em; color: var(--signal); font-style: italic; }
+
+    .stage-instruction {
+      position: absolute;
+      z-index: 4;
+      top: 1.75rem;
+      right: var(--gutter);
+      max-width: 17rem;
+      margin: 0;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .67rem;
+      line-height: 1.5;
+      letter-spacing: .04em;
+      text-align: right;
+      pointer-events: none;
+    }
+
+    .render-shell {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    #shipCanvas {
+      display: none;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      touch-action: none;
+    }
+    #shipCanvas:active { cursor: grabbing; }
+
+    .fallback-vessel {
+      width: min(88%, 72rem);
+      margin: 6rem auto 8rem;
+      color: var(--bone);
+    }
+    .fallback-vessel svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+      filter: drop-shadow(0 1.2rem 2.5rem rgba(0, 0, 0, .42));
+    }
+    .fallback-grid { opacity: .18; }
+    .fallback-outline { fill: rgba(10, 24, 22, .78); stroke: currentColor; stroke-width: 2; }
+    .fallback-detail { fill: none; stroke: var(--cool); stroke-width: 1.5; stroke-dasharray: 5 7; opacity: .8; }
+    .fallback-livery { fill: none; stroke: var(--ship-accent, var(--signal)); stroke-width: 9; stroke-linecap: round; }
+    .fallback-node { fill: var(--ship-accent, var(--signal)); }
+
+    html.enhanced #shipCanvas { display: block; }
+    html.enhanced .fallback-vessel { display: none; }
+    html.enhanced.fallback-mode #shipCanvas { display: none; }
+    html.enhanced.fallback-mode .fallback-vessel { display: block; }
+
+    .stage-readout {
+      position: absolute;
+      z-index: 5;
+      right: var(--gutter);
+      bottom: 7.6rem;
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      max-width: min(31rem, 70%);
+      padding: .62rem .75rem;
+      border: 1px solid var(--line);
+      color: var(--bone-soft);
+      background: rgba(3, 8, 7, .66);
+      backdrop-filter: blur(12px);
+    }
+    .stage-readout::before {
+      content: "";
+      flex: 0 0 auto;
+      width: .46rem;
+      height: .46rem;
+      border: 1px solid var(--signal);
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 2px var(--night-deep);
+      background: var(--signal);
+    }
+
+    .truth-strip {
+      position: absolute;
+      z-index: 5;
+      inset: auto 0 0;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      background: rgba(3, 8, 7, .84);
+      backdrop-filter: blur(18px);
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 1rem var(--gutter);
+      border-right: 1px solid var(--line);
+    }
+    .metric:last-child { border-right: 0; }
+    .metric dl { margin: 0; }
+    .metric dt { color: var(--muted); }
+    .metric dd {
+      margin: .28rem 0 0;
+      overflow: hidden;
+      color: var(--bone);
+      font-family: ui-serif, "Iowan Old Style", Baskerville, serif;
+      font-size: clamp(1.05rem, 1.5vw, 1.55rem);
+      line-height: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .configurator {
+      min-width: 0;
+      min-height: calc(100svh - 4.4rem);
+      background: var(--glass-solid);
+    }
+    .config-form {
+      min-height: calc(100svh - 4.4rem);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .config-intro {
+      padding: clamp(1.4rem, 3vw, 2.5rem) var(--gutter) 1.35rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .config-intro h2 {
+      margin: .28rem 0 .55rem;
+      font-family: ui-serif, "Iowan Old Style", Baskerville, serif;
+      font-size: clamp(1.65rem, 2.4vw, 2.35rem);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -.035em;
+    }
+    .config-intro > p:last-of-type {
+      max-width: 38rem;
+      margin: 0;
+      color: var(--bone-soft);
+      font-size: .85rem;
+      line-height: 1.55;
+    }
+
+    .progress {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .28rem;
+      margin-top: 1.35rem;
+    }
+    .progress span {
+      position: relative;
+      height: .2rem;
+      overflow: hidden;
+      background: rgba(233, 228, 212, .12);
+    }
+    .progress span::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--signal);
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+    .progress-copy {
+      margin-top: .6rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .68rem;
+      line-height: 1.35;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .fields { flex: 1 1 auto; }
+
+    fieldset {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    legend {
+      width: 100%;
+      padding: 1.05rem var(--gutter) .55rem;
+      color: var(--bone);
+      font-size: .8rem;
+      font-weight: 650;
+      letter-spacing: .01em;
+    }
+
+    .field-index {
+      display: inline-block;
+      min-width: 2rem;
+      margin-right: .35rem;
+      color: var(--signal);
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .45rem;
+      padding: 0 var(--gutter) 1rem;
+    }
+
+    .choice { position: relative; min-width: 0; cursor: pointer; }
+
+    .choice input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .choice-body {
+      position: relative;
+      min-height: 5.6rem;
+      display: flex;
+      flex-direction: column;
+      padding: .72rem .68rem .62rem;
+      border: 1px solid var(--line);
+      background: rgba(233, 228, 212, .018);
+      transition: border-color .2s ease, background .2s ease, transform .2s var(--ease);
+    }
+    .choice-body::after {
+      content: "";
+      position: absolute;
+      top: .55rem;
+      right: .55rem;
+      width: .42rem;
+      height: .42rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+    }
+    .choice:hover .choice-body {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+    .choice input:focus-visible + .choice-body {
+      outline: 3px solid var(--cool);
+      outline-offset: 3px;
+    }
+    .choice input:checked + .choice-body {
+      border-color: var(--signal);
+      background: linear-gradient(145deg, rgba(255, 107, 67, .12), rgba(255, 107, 67, .025));
+    }
+    .choice input:checked + .choice-body::after {
+      border-color: var(--signal);
+      background: var(--signal);
+      box-shadow: 0 0 .7rem rgba(255, 107, 67, .5);
+    }
+
+    .choice-code { color: var(--muted); }
+    .choice-name {
+      display: block;
+      margin-top: .45rem;
+      padding-right: .55rem;
+      color: var(--bone);
+      font-size: .83rem;
+      font-weight: 650;
+      line-height: 1.05;
+    }
+    .choice-note {
+      display: block;
+      margin-top: .3rem;
+      color: var(--muted);
+      font-size: .66rem;
+      line-height: 1.3;
+    }
+
+    .commission-dock {
+      position: sticky;
+      z-index: 8;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: .75rem;
+      padding: 1rem var(--gutter);
+      border-top: 1px solid var(--line-strong);
+      background: rgba(3, 8, 7, .94);
+      backdrop-filter: blur(18px);
+    }
+
+    .manifest-id {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .68rem;
+      line-height: 1.35;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .manifest-id strong {
+      display: block;
+      margin-top: .28rem;
+      overflow-wrap: anywhere;
+      color: var(--bone);
+      font-size: .78rem;
+      font-weight: 500;
+      letter-spacing: .08em;
+    }
+
+    .commission-button {
+      min-height: 3.2rem;
+      padding: .8rem 1.05rem;
+      border: 1px solid var(--signal);
+      color: #160a05;
+      background: var(--signal);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 0 rgba(255, 107, 67, 0);
+      transition: transform .2s var(--ease), box-shadow .2s ease;
+    }
+    .commission-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 .65rem 2rem rgba(255, 107, 67, .2);
+    }
+
+    .launch-seal {
+      position: absolute;
+      z-index: 12;
+      right: var(--gutter);
+      bottom: 8.8rem;
+      width: min(25rem, calc(100% - 2 * var(--gutter)));
+      padding: 1.15rem;
+      border: 1px solid var(--signal);
+      color: var(--bone);
+      background: rgba(7, 16, 15, .96);
+      box-shadow: 0 1.2rem 4rem rgba(0, 0, 0, .55);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(1rem);
+      transition: opacity .32s ease, transform .45s var(--ease);
+    }
+    body.commissioned .launch-seal {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .seal-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .status-token {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .68rem;
+      line-height: 1.35;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--success);
+    }
+
+    .seal-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--signal);
+      border-radius: 50%;
+      color: var(--signal);
+      font-size: 1rem;
+    }
+
+    .launch-seal h2 {
+      margin: .9rem 0 .3rem;
+      font-family: ui-serif, "Iowan Old Style", Baskerville, serif;
+      font-size: 2rem;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -.03em;
+    }
+    .launch-seal p { margin: 0; color: var(--bone-soft); font-size: .78rem; line-height: 1.5; }
+
+    .seal-config {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .45rem 1rem;
+      margin: 1rem 0;
+      color: var(--bone);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .64rem;
+      line-height: 1.4;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .return-button {
+      padding: .55rem 0;
+      border: 0;
+      border-bottom: 1px solid currentColor;
+      color: var(--cool);
+      background: transparent;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .68rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    @media (max-width: 980px) {
+      .yard-header { grid-template-columns: 1fr auto; }
+      .berth-state { display: none; }
+      .commissioning { display: block; min-height: 0; }
+      .vessel-stage {
+        position: relative;
+        top: auto;
+        height: clamp(34rem, 68svh, 47rem);
+        min-height: 34rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .configurator, .config-form { min-height: 0; }
+      .config-intro { padding-top: 1.7rem; }
+      .fields { display: grid; grid-template-columns: 1fr 1fr; }
+      fieldset:nth-child(odd) { border-right: 1px solid var(--line); }
+      .commission-dock { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 660px) {
+      .yard-header { min-height: 3.9rem; }
+      .yard-mark span:last-child { display: none; }
+      .view-toggle { min-height: 2.3rem; font-size: .6rem; }
+      .commissioning { padding-top: 3.9rem; }
+      .vessel-stage { height: 33rem; min-height: 33rem; }
+      .stage-heading { top: 1.2rem; max-width: 82%; }
+      h1 { max-width: 9ch; font-size: clamp(2.7rem, 14vw, 4.2rem); }
+      .stage-instruction { display: none; }
+      .stage-readout { right: 1rem; bottom: 6.15rem; max-width: calc(100% - 2rem); font-size: .57rem; }
+      .truth-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .metric { padding: .8rem .35rem; }
+      .metric dt { font-size: .5rem; letter-spacing: .04em; }
+      .metric dd { font-size: .9rem; }
+      .fallback-vessel { width: 94%; margin: 7rem auto 7rem; }
+      .fields { display: block; }
+      fieldset:nth-child(odd) { border-right: 0; }
+      .choices { grid-template-columns: 1fr; }
+      .choice-body {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 3.2rem minmax(5.5rem, .7fr) 1fr;
+        align-items: center;
+        gap: .5rem;
+        padding: .75rem .8rem;
+      }
+      .choice-name, .choice-note { margin-top: 0; }
+      .commission-dock { grid-template-columns: 1fr; }
+      .commission-button { width: 100%; }
+      .launch-seal { right: 1rem; bottom: 6.8rem; width: calc(100% - 2rem); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+      #shipCanvas { cursor: default; }
+    }
+
+    @media (forced-colors: active) {
+      .choice input:checked + .choice-body { outline: 2px solid ButtonText; }
+      .choice-body::after { forced-color-adjust: none; }
+      .progress span::after { background: Highlight; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#configurator">Skip to vessel configuration</a>
+
+  <header class="yard-header" aria-label="Orison Yard commissioning header">
+    <div class="yard-mark">
+      <span class="yard-glyph" aria-hidden="true"><i></i></span>
+      <span>Orison Yard / Berth 04</span>
+    </div>
+    <div class="berth-state">Tether stable · crew clear</div>
+    <button class="view-toggle" id="viewToggle" type="button" aria-pressed="false">View · particle 3D</button>
+  </header>
+
+  <main class="commissioning">
+    <section class="vessel-stage" aria-labelledby="vesselTitle">
+      <div class="stage-heading">
+        <p class="micro">Vessel under commission</p>
+        <h1 id="vesselTitle"><span id="hullTitle">Kestrel</span> <span id="driveTitle">Ion Veil</span></h1>
+      </div>
+      <p class="stage-instruction">Drag to inspect · arrow keys rotate · 0 resets view</p>
+
+      <div class="render-shell">
+        <canvas id="shipCanvas" tabindex="0" role="img" aria-label="Interactive three-dimensional particle model of a Kestrel hull with Ion Veil drive, Solo habitat, and Ember livery."></canvas>
+
+        <figure class="fallback-vessel" id="fallbackVessel" aria-labelledby="fallbackTitle fallbackDescription">
+          <svg id="fallbackSvg" viewBox="0 0 900 480" role="img">
+            <title id="fallbackTitle">Kestrel vessel schematic</title>
+            <desc id="fallbackDescription">A lower-performance schematic showing the same selected hull, drive, habitat, and livery as the particle vessel.</desc>
+            <defs>
+              <pattern id="smallGrid" width="28" height="28" patternUnits="userSpaceOnUse">
+                <path d="M 28 0 L 0 0 0 28" fill="none" stroke="currentColor" stroke-width=".5" />
+              </pattern>
+            </defs>
+            <rect class="fallback-grid" width="900" height="480" fill="url(#smallGrid)" />
+            <line class="fallback-detail" x1="70" y1="240" x2="830" y2="240" />
+            <g id="fallbackShipShape">
+              <path id="fallbackHull" class="fallback-outline" d="M152 241 Q222 161 520 174 Q696 184 774 240 Q696 296 520 306 Q222 319 152 241Z" />
+              <path id="fallbackLivery" class="fallback-livery" d="M282 200 Q476 170 660 216" />
+              <g id="fallbackDrive">
+                <path class="fallback-outline" d="M170 203 L92 211 L64 227 L151 231Z" />
+                <path class="fallback-outline" d="M170 279 L92 271 L64 255 L151 251Z" />
+                <circle class="fallback-node" cx="65" cy="229" r="6" />
+                <circle class="fallback-node" cx="65" cy="253" r="6" />
+              </g>
+              <g id="fallbackHabitat">
+                <ellipse class="fallback-detail" cx="522" cy="240" rx="26" ry="68" />
+                <circle class="fallback-node" cx="522" cy="190" r="5" />
+              </g>
+              <path class="fallback-detail" d="M693 213 L792 240 L693 267" />
+            </g>
+            <text x="72" y="54" fill="currentColor" font-family="monospace" font-size="14" letter-spacing="2">LOW-DIMENSION SCHEMATIC / STATE TRUTH PRESERVED</text>
+            <text id="fallbackLabel" x="72" y="434" fill="currentColor" font-family="monospace" font-size="15" letter-spacing="1">K01 · IV2 · S01 · EM</text>
+          </svg>
+          <figcaption class="sr-only">The schematic changes shape, engine arrangement, habitat module, and livery stripe when the matching semantic controls change.</figcaption>
+        </figure>
+      </div>
+
+      <div class="stage-readout" id="stageReadout">All modules physically resolved · ready to commission</div>
+
+      <div class="truth-strip" aria-label="Current vessel metrics">
+        <div class="metric"><dl><dt>Dry mass</dt><dd id="metricMass">117 t</dd></dl></div>
+        <div class="metric"><dl><dt>Range</dt><dd id="metricRange">54 AU</dd></dl></div>
+        <div class="metric"><dl><dt>Delta-v</dt><dd id="metricDelta">18 km/s</dd></dl></div>
+        <div class="metric"><dl><dt>Berths</dt><dd id="metricBerths">1</dd></dl></div>
+        <div class="metric"><dl><dt>Build</dt><dd id="metricCost">8.9 M¢</dd></dl></div>
+      </div>
+
+      <section class="launch-seal" id="launchSeal" aria-labelledby="sealTitle" aria-hidden="true">
+        <div class="seal-top">
+          <span class="status-token">Flight manifest sealed</span>
+          <span class="seal-mark" aria-hidden="true">↗</span>
+        </div>
+        <h2 id="sealTitle">Vessel commissioned.</h2>
+        <p id="sealSummary">Kestrel / Ion Veil is cleared from Berth 04.</p>
+        <div class="seal-config" id="sealConfig"></div>
+        <button class="return-button" id="returnButton" type="button">Return to berth</button>
+      </section>
+    </section>
+
+    <aside class="configurator" id="configurator" aria-labelledby="configTitle">
+      <form class="config-form" id="configForm">
+        <div class="config-intro">
+          <p class="micro">Commissioning sequence</p>
+          <h2 id="configTitle">Shape the voyage.</h2>
+          <p>Every selection remakes the vessel in berth. Performance figures below are calculated from the installed modules.</p>
+          <div class="progress" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div class="progress-copy">04 / 04 systems aligned</div>
+        </div>
+
+        <div class="fields">
+          <fieldset>
+            <legend><span class="field-index">01</span>Hull frame</legend>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="hull" value="kestrel" checked>
+                <span class="choice-body"><span class="choice-code">K01</span><span class="choice-name">Kestrel</span><span class="choice-note">Lean / +range</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="hull" value="nomad">
+                <span class="choice-body"><span class="choice-code">N04</span><span class="choice-name">Nomad</span><span class="choice-note">Balanced / roomy</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="hull" value="atlas">
+                <span class="choice-body"><span class="choice-code">A09</span><span class="choice-name">Atlas</span><span class="choice-note">Heavy / cargo</span></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend><span class="field-index">02</span>Primary drive</legend>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="drive" value="ion" checked>
+                <span class="choice-body"><span class="choice-code">IV2</span><span class="choice-name">Ion Veil</span><span class="choice-note">Efficient / 18 km·s⁻¹</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="drive" value="helix">
+                <span class="choice-body"><span class="choice-code">HX7</span><span class="choice-name">Helix</span><span class="choice-note">Fast / 26 km·s⁻¹</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="drive" value="sunfold">
+                <span class="choice-body"><span class="choice-code">SF3</span><span class="choice-name">Sunfold</span><span class="choice-note">Long reach / silent</span></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend><span class="field-index">03</span>Habitat ring</legend>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="habitat" value="solo" checked>
+                <span class="choice-body"><span class="choice-code">S01</span><span class="choice-name">Solo</span><span class="choice-note">1 berth / survey</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="habitat" value="crew">
+                <span class="choice-body"><span class="choice-code">C04</span><span class="choice-name">Crew</span><span class="choice-note">4 berths / shared</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="habitat" value="garden">
+                <span class="choice-body"><span class="choice-code">G06</span><span class="choice-name">Garden</span><span class="choice-note">6 berths / closed loop</span></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend><span class="field-index">04</span>Signal livery</legend>
+            <div class="choices">
+              <label class="choice">
+                <input type="radio" name="livery" value="ember" checked>
+                <span class="choice-body"><span class="choice-code">EM</span><span class="choice-name">Ember</span><span class="choice-note">Vermilion / high trace</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="livery" value="ceramic">
+                <span class="choice-body"><span class="choice-code">CR</span><span class="choice-name">Ceramic</span><span class="choice-note">Warm white / quiet</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="livery" value="ultraviolet">
+                <span class="choice-body"><span class="choice-code">UV</span><span class="choice-name">Ultraviolet</span><span class="choice-note">Violet / deep field</span></span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="commission-dock">
+          <div class="manifest-id">Configuration identity<strong id="manifestId">OY-K01-IV2-S01-EM</strong></div>
+          <button class="commission-button" id="commissionButton" type="submit">Seal manifest · launch</button>
+        </div>
+      </form>
+    </aside>
+  </main>
+
+  <div class="sr-only" id="statusLive" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => document.querySelectorAll(selector);
+      const canvas = $('#shipCanvas');
+      const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+      const form = $('#configForm');
+      const viewToggle = $('#viewToggle');
+      const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const lowCapability = !ctx || Boolean(
+        navigator.connection?.saveData ||
+        (navigator.deviceMemory && navigator.deviceMemory <= 2) ||
+        (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2)
+      );
+
+      const catalog = {
+        hull: {
+          kestrel: { name: 'Kestrel', code: 'K01', mass: 86, cost: 4.8, range: 18, length: 1.08, radius: .72, form: 'lean survey frame' },
+          nomad: { name: 'Nomad', code: 'N04', mass: 116, cost: 6.2, range: 10, length: .98, radius: 1.02, form: 'broad roaming frame' },
+          atlas: { name: 'Atlas', code: 'A09', mass: 168, cost: 8.4, range: 2, length: 1.19, radius: .94, form: 'extended cargo frame' }
+        },
+        drive: {
+          ion: { name: 'Ion Veil', code: 'IV2', mass: 22, cost: 3.1, range: 28, delta: 18, form: 'two efficient ion vanes' },
+          helix: { name: 'Helix', code: 'HX7', mass: 38, cost: 5.6, range: 19, delta: 26, form: 'three vectoring coils' },
+          sunfold: { name: 'Sunfold', code: 'SF3', mass: 29, cost: 7.8, range: 46, delta: 21, form: 'one silent solar aperture' }
+        },
+        habitat: {
+          solo: { name: 'Solo', code: 'S01', mass: 9, cost: .8, range: 8, berths: 1, form: 'forward survey cell' },
+          crew: { name: 'Crew', code: 'C04', mass: 21, cost: 1.7, range: 0, berths: 4, form: 'double habitation ring' },
+          garden: { name: 'Garden', code: 'G06', mass: 46, cost: 3.4, range: -7, berths: 6, form: 'closed-loop garden torus' }
+        },
+        livery: {
+          ember: { name: 'Ember', code: 'EM', cost: .2, color: '#ff6b43', rgb: [255, 107, 67] },
+          ceramic: { name: 'Ceramic', code: 'CR', cost: .3, color: '#e9e4d4', rgb: [233, 228, 212] },
+          ultraviolet: { name: 'Ultraviolet', code: 'UV', cost: .5, color: '#aa8cff', rgb: [170, 140, 255] }
+        }
+      };
+
+      const state = {
+        config: { hull: 'kestrel', drive: 'ion', habitat: 'solo', livery: 'ember' },
+        points: [],
+        oldPoints: [],
+        yaw: -.24,
+        pitch: -.12,
+        targetYaw: -.24,
+        targetPitch: -.12,
+        transitionAt: performance.now(),
+        lastTime: performance.now(),
+        changedModule: 'all',
+        dragging: false,
+        pointerX: 0,
+        pointerY: 0,
+        launched: false,
+        launchAt: 0,
+        fallback: lowCapability,
+        reduced: motionQuery.matches
+      };
+
+      let cssWidth = 0;
+      let cssHeight = 0;
+      let animationId = 0;
+
+      function selected(group) {
+        return catalog[group][state.config[group]];
+      }
+
+      function currentSerial() {
+        return `OY-${selected('hull').code}-${selected('drive').code}-${selected('habitat').code}-${selected('livery').code}`;
+      }
+
+      function seededRandom(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value += 0x6D2B79F5;
+          let t = value;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function addCylinder(points, random, x0, length, radius, yOffset, zOffset, count, section, colorRole) {
+        for (let i = 0; i < count; i += 1) {
+          const t = random();
+          const theta = random() * Math.PI * 2;
+          points.push({
+            x: x0 - t * length,
+            y: yOffset + Math.cos(theta) * radius,
+            z: zOffset + Math.sin(theta) * radius,
+            section,
+            colorRole,
+            size: .7 + random() * 1.25,
+            seed: random() * Math.PI * 2
+          });
+        }
+      }
+
+      function addTorus(points, random, x, major, minor, count, section, colorRole) {
+        for (let i = 0; i < count; i += 1) {
+          const a = random() * Math.PI * 2;
+          const b = random() * Math.PI * 2;
+          const ring = major + Math.cos(b) * minor;
+          points.push({
+            x: x + Math.sin(b) * minor,
+            y: Math.cos(a) * ring,
+            z: Math.sin(a) * ring,
+            section,
+            colorRole,
+            size: .75 + random() * 1.15,
+            seed: random() * Math.PI * 2
+          });
+        }
+      }
+
+      function buildPoints() {
+        const seedText = currentSerial();
+        const seed = [...seedText].reduce((sum, char) => sum + char.charCodeAt(0) * 17, 31337);
+        const random = seededRandom(seed);
+        const hull = selected('hull');
+        const drive = state.config.drive;
+        const habitat = state.config.habitat;
+        const points = [];
+        const lowDensity = cssWidth < 640 || (window.devicePixelRatio && window.devicePixelRatio > 2.5);
+        const hullCount = lowDensity ? 410 : 690;
+        const shipLength = 3.75 * hull.length;
+
+        for (let i = 0; i < hullCount; i += 1) {
+          const t = random();
+          const x = (t * 2 - 1) * shipLength;
+          const normalized = (x / shipLength + 1) / 2;
+          let profile = Math.pow(Math.sin(Math.PI * normalized), state.config.hull === 'atlas' ? .42 : .6);
+          profile *= .83 + .17 * Math.sin(normalized * Math.PI * 1.35);
+          const theta = random() * Math.PI * 2;
+          const box = state.config.hull === 'atlas' ? .68 : 1;
+          const yWave = Math.sign(Math.cos(theta)) * Math.pow(Math.abs(Math.cos(theta)), box);
+          const zWave = Math.sign(Math.sin(theta)) * Math.pow(Math.abs(Math.sin(theta)), box);
+          const upperStripe = Math.sin(theta) < -.55 && normalized > .22 && normalized < .82;
+          points.push({
+            x,
+            y: yWave * profile * hull.radius * (state.config.hull === 'kestrel' ? .78 : .92),
+            z: zWave * profile * hull.radius,
+            section: upperStripe ? 'livery' : 'hull',
+            colorRole: upperStripe ? 'accent' : (random() > .9 ? 'cool' : 'bone'),
+            size: .6 + random() * 1.45,
+            seed: random() * Math.PI * 2
+          });
+        }
+
+        const driveX = -shipLength * .78;
+        if (drive === 'ion') {
+          addCylinder(points, random, driveX, 1.15, .22, -.62, .16, lowDensity ? 60 : 92, 'drive', 'cool');
+          addCylinder(points, random, driveX, 1.15, .22, .62, .16, lowDensity ? 60 : 92, 'drive', 'cool');
+        } else if (drive === 'helix') {
+          [-.72, 0, .72].forEach((y, index) => addCylinder(points, random, driveX, 1.32, .19, y, index === 1 ? -.32 : .2, lowDensity ? 48 : 76, 'drive', index === 1 ? 'accent' : 'cool'));
+        } else {
+          addTorus(points, random, driveX - .42, .78, .09, lowDensity ? 120 : 190, 'drive', 'accent');
+        }
+
+        const habitatX = state.config.hull === 'atlas' ? .65 : .35;
+        if (habitat === 'solo') {
+          addTorus(points, random, shipLength * .52, .38, .055, lowDensity ? 48 : 72, 'habitat', 'accent');
+        } else if (habitat === 'crew') {
+          addTorus(points, random, habitatX - .19, .88 * hull.radius, .075, lowDensity ? 82 : 132, 'habitat', 'accent');
+          addTorus(points, random, habitatX + .19, .88 * hull.radius, .075, lowDensity ? 82 : 132, 'habitat', 'cool');
+        } else {
+          addTorus(points, random, habitatX, 1.12 * hull.radius, .17, lowDensity ? 150 : 230, 'habitat', 'garden');
+        }
+
+        return points;
+      }
+
+      function resizeCanvas() {
+        if (!ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        cssWidth = Math.max(1, rect.width);
+        cssHeight = Math.max(1, rect.height);
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(cssWidth * ratio);
+        canvas.height = Math.round(cssHeight * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+
+      function rebuild(module, announce = true) {
+        state.oldPoints = state.points.length ? state.points.map(point => ({ ...point })) : [];
+        state.points = buildPoints();
+        state.changedModule = module;
+        state.transitionAt = performance.now();
+        state.launched = false;
+        document.body.classList.remove('commissioned', 'launching');
+        $('#launchSeal').setAttribute('aria-hidden', 'true');
+        updateTruth(module, announce);
+      }
+
+      function updateTruth(module, announce) {
+        const hull = selected('hull');
+        const drive = selected('drive');
+        const habitat = selected('habitat');
+        const livery = selected('livery');
+        const mass = hull.mass + drive.mass + habitat.mass;
+        const range = Math.max(12, hull.range + drive.range + habitat.range);
+        const cost = hull.cost + drive.cost + habitat.cost + livery.cost;
+
+        $('#hullTitle').textContent = hull.name;
+        $('#driveTitle').textContent = drive.name;
+        $('#metricMass').textContent = `${mass} t`;
+        $('#metricRange').textContent = `${range} AU`;
+        $('#metricDelta').textContent = `${drive.delta} km/s`;
+        $('#metricBerths').textContent = habitat.berths;
+        $('#metricCost').textContent = `${cost.toFixed(1)} M¢`;
+        $('#manifestId').textContent = currentSerial();
+        canvas.setAttribute('aria-label', `Interactive three-dimensional particle model of a ${hull.name} hull with ${drive.name} drive, ${habitat.name} habitat, and ${livery.name} livery.`);
+        document.documentElement.style.setProperty('--ship-accent', livery.color);
+        $('#fallbackTitle').textContent = `${hull.name} vessel schematic`;
+        $('#fallbackDescription').textContent = `Schematic of a ${hull.name} hull with ${drive.name} drive, ${habitat.name} habitat, and ${livery.name} livery.`;
+        $('#fallbackLabel').textContent = `${hull.code} · ${drive.code} · ${habitat.code} · ${livery.code}`;
+        updateFallbackGeometry();
+
+        const moduleText = module === 'all'
+          ? 'All modules physically resolved · ready to commission'
+          : `${catalog[module][state.config[module]].name} ${module} integrated · manifest recalculated`;
+        $('#stageReadout').textContent = moduleText;
+        if (announce) {
+          $('#statusLive').textContent = `${moduleText}. Dry mass ${mass} tonnes, range ${range} astronomical units, ${habitat.berths} berths.`;
+        }
+      }
+
+      function updateFallbackGeometry() {
+        const hullPaths = {
+          kestrel: 'M152 241 Q222 161 520 174 Q696 184 774 240 Q696 296 520 306 Q222 319 152 241Z',
+          nomad: 'M150 241 Q224 136 525 145 Q690 152 772 240 Q690 328 525 335 Q224 346 150 241Z',
+          atlas: 'M112 241 L206 155 Q500 145 708 174 L806 240 L708 306 Q500 337 206 327Z'
+        };
+        const liveryPaths = {
+          kestrel: 'M282 200 Q476 170 660 216',
+          nomad: 'M274 181 Q478 141 666 205',
+          atlas: 'M248 180 L530 164 L704 199'
+        };
+        const driveShapes = {
+          ion: '<path class="fallback-outline" d="M170 203 L92 211 L64 227 L151 231Z"/><path class="fallback-outline" d="M170 279 L92 271 L64 255 L151 251Z"/><circle class="fallback-node" cx="65" cy="229" r="6"/><circle class="fallback-node" cx="65" cy="253" r="6"/>',
+          helix: '<path class="fallback-outline" d="M171 185 L78 194 L50 209 L153 216Z"/><path class="fallback-outline" d="M164 228 L62 231 L42 241 L164 251Z"/><path class="fallback-outline" d="M171 297 L78 288 L50 273 L153 266Z"/><circle class="fallback-node" cx="51" cy="209" r="6"/><circle class="fallback-node" cx="43" cy="241" r="6"/><circle class="fallback-node" cx="51" cy="273" r="6"/>',
+          sunfold: '<ellipse class="fallback-outline" cx="126" cy="241" rx="48" ry="92"/><ellipse class="fallback-detail" cx="126" cy="241" rx="24" ry="68"/><circle class="fallback-node" cx="126" cy="149" r="6"/>'
+        };
+        const habitatShapes = {
+          solo: '<ellipse class="fallback-detail" cx="669" cy="240" rx="18" ry="45"/><circle class="fallback-node" cx="669" cy="208" r="5"/>',
+          crew: '<ellipse class="fallback-detail" cx="500" cy="240" rx="24" ry="86"/><ellipse class="fallback-detail" cx="540" cy="240" rx="24" ry="86"/><circle class="fallback-node" cx="500" cy="170" r="5"/><circle class="fallback-node" cx="540" cy="170" r="5"/>',
+          garden: '<ellipse class="fallback-outline" cx="520" cy="240" rx="42" ry="108"/><ellipse class="fallback-detail" cx="520" cy="240" rx="19" ry="78"/><circle class="fallback-node" cx="520" cy="134" r="7"/>'
+        };
+        $('#fallbackHull').setAttribute('d', hullPaths[state.config.hull]);
+        $('#fallbackLivery').setAttribute('d', liveryPaths[state.config.hull]);
+        $('#fallbackDrive').innerHTML = driveShapes[state.config.drive];
+        $('#fallbackHabitat').innerHTML = habitatShapes[state.config.habitat];
+      }
+
+      function interpolatePoint(point, index, progress) {
+        const old = state.oldPoints[index % Math.max(1, state.oldPoints.length)];
+        if (!old || progress >= 1 || state.reduced) return point;
+        const affected = state.changedModule === 'all' || point.section === state.changedModule || (state.changedModule === 'hull' && point.section === 'livery');
+        if (!affected) return point;
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const scatter = Math.sin(point.seed + progress * Math.PI) * (1 - progress) * 1.6;
+        return {
+          ...point,
+          x: old.x + (point.x - old.x) * eased,
+          y: old.y + (point.y - old.y) * eased + scatter,
+          z: old.z + (point.z - old.z) * eased + Math.cos(point.seed) * (1 - progress) * .8
+        };
+      }
+
+      function rotate(point) {
+        const cosY = Math.cos(state.yaw);
+        const sinY = Math.sin(state.yaw);
+        const x1 = point.x * cosY - point.z * sinY;
+        const z1 = point.x * sinY + point.z * cosY;
+        const cosX = Math.cos(state.pitch);
+        const sinX = Math.sin(state.pitch);
+        return {
+          ...point,
+          x: x1,
+          y: point.y * cosX - z1 * sinX,
+          z: point.y * sinX + z1 * cosX
+        };
+      }
+
+      function particleColor(role, alpha) {
+        const livery = selected('livery').rgb;
+        if (role === 'accent') return `rgba(${livery[0]}, ${livery[1]}, ${livery[2]}, ${alpha})`;
+        if (role === 'cool') return `rgba(115, 221, 199, ${alpha})`;
+        if (role === 'garden') return `rgba(180, 230, 110, ${alpha})`;
+        return `rgba(233, 228, 212, ${alpha})`;
+      }
+
+      function drawDock(centerX, centerY, unit) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(215, 230, 222, .12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + unit * 1.2, unit * 4.4, unit * .64, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + unit * 1.2, unit * 3.15, unit * .42, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([4, 8]);
+        ctx.strokeStyle = 'rgba(115, 221, 199, .18)';
+        ctx.beginPath();
+        ctx.moveTo(centerX - unit * 5.2, centerY + unit * 1.2);
+        ctx.lineTo(centerX + unit * 5.2, centerY + unit * 1.2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function render(now) {
+        if (!ctx || state.fallback) {
+          animationId = 0;
+          return;
+        }
+
+        const delta = Math.min(32, now - state.lastTime);
+        state.lastTime = now;
+        if (!state.reduced && !state.dragging && !state.launched) state.targetYaw += delta * .000035;
+        state.yaw += (state.targetYaw - state.yaw) * Math.min(1, delta * .012);
+        state.pitch += (state.targetPitch - state.pitch) * Math.min(1, delta * .012);
+
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+        const centerX = cssWidth * (cssWidth < 660 ? .5 : .49);
+        const centerY = cssHeight * (cssWidth < 660 ? .56 : .55);
+        const unit = Math.min(cssWidth / 11.5, cssHeight / 7.6);
+        drawDock(centerX, centerY, unit);
+
+        const transitionProgress = state.reduced ? 1 : Math.min(1, (now - state.transitionAt) / 780);
+        const launchProgress = state.launched ? Math.min(1, (now - state.launchAt) / 930) : 0;
+        const projected = state.points.map((target, index) => {
+          const point = rotate(interpolatePoint(target, index, transitionProgress));
+          const depth = 10 + point.z;
+          const perspective = 10 / Math.max(4.5, depth);
+          const launchEase = launchProgress * launchProgress;
+          return {
+            ...point,
+            sx: centerX + point.x * unit * perspective + launchEase * cssWidth * .72,
+            sy: centerY + point.y * unit * perspective - launchEase * point.x * unit * .09,
+            perspective,
+            launchEase
+          };
+        }).sort((a, b) => b.z - a.z);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const point of projected) {
+          const depthAlpha = Math.max(.18, Math.min(.95, .72 - point.z * .055));
+          const fade = 1 - Math.max(0, point.launchEase - .66) * 2.85;
+          const pulse = state.reduced ? 1 : .88 + Math.sin(now * .0015 + point.seed) * .12;
+          const radius = Math.max(.55, point.size * point.perspective * pulse);
+          ctx.fillStyle = particleColor(point.colorRole, depthAlpha * Math.max(0, fade));
+          ctx.beginPath();
+          ctx.arc(point.sx, point.sy, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        if (state.launched && launchProgress > .25 && !state.reduced) {
+          const tailAlpha = (1 - launchProgress) * .55;
+          ctx.strokeStyle = `rgba(115, 221, 199, ${tailAlpha})`;
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 18; i += 1) {
+            const y = centerY + (i - 9) * 4.5;
+            ctx.beginPath();
+            ctx.moveTo(centerX - unit * 4, y);
+            ctx.lineTo(centerX + unit * (launchProgress * 3), y + Math.sin(i) * 3);
+            ctx.stroke();
+          }
+        }
+
+        animationId = requestAnimationFrame(render);
+      }
+
+      function ensureRendering() {
+        if (!animationId && ctx && !state.fallback) {
+          state.lastTime = performance.now();
+          animationId = requestAnimationFrame(render);
+        }
+      }
+
+      function setFallback(force) {
+        state.fallback = force;
+        document.documentElement.classList.toggle('fallback-mode', force);
+        viewToggle.setAttribute('aria-pressed', String(force));
+        viewToggle.textContent = force ? 'View · state schematic' : 'View · particle 3D';
+        $('#statusLive').textContent = force
+          ? 'Schematic view active. All configuration relationships and controls remain available.'
+          : 'Three-dimensional particle view active.';
+        if (!force) {
+          resizeCanvas();
+          ensureRendering();
+        }
+      }
+
+      function commission() {
+        state.launched = true;
+        state.launchAt = performance.now();
+        document.body.classList.add('launching');
+        const delay = state.reduced || state.fallback ? 0 : 880;
+        window.setTimeout(() => {
+          const hull = selected('hull');
+          const drive = selected('drive');
+          const habitat = selected('habitat');
+          const livery = selected('livery');
+          document.body.classList.remove('launching');
+          document.body.classList.add('commissioned');
+          $('#launchSeal').setAttribute('aria-hidden', 'false');
+          $('#sealSummary').textContent = `${hull.name} / ${drive.name} is cleared from Berth 04.`;
+          $('#sealConfig').innerHTML = `<span>${hull.code} · ${hull.form}</span><span>${drive.code} · ${drive.form}</span><span>${habitat.code} · ${habitat.berths} berth${habitat.berths === 1 ? '' : 's'}</span><span>${livery.code} · ${livery.name} trace</span>`;
+          $('#stageReadout').textContent = `${currentSerial()} · flight manifest sealed`;
+          $('#statusLive').textContent = `Vessel commissioned. ${hull.name} with ${drive.name} drive is cleared from Berth 04.`;
+          $('#returnButton').focus({ preventScroll: true });
+        }, delay);
+      }
+
+      form.addEventListener('change', (event) => {
+        if (!event.target.matches('input[type="radio"]')) return;
+        state.config[event.target.name] = event.target.value;
+        rebuild(event.target.name);
+        ensureRendering();
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        commission();
+      });
+
+      $('#returnButton').addEventListener('click', () => {
+        state.launched = false;
+        document.body.classList.remove('commissioned', 'launching');
+        $('#launchSeal').setAttribute('aria-hidden', 'true');
+        $('#stageReadout').textContent = 'Manifest reopened · vessel held in berth';
+        $('#statusLive').textContent = 'Manifest reopened. The vessel remains configured and held in berth.';
+        $('#commissionButton').focus({ preventScroll: true });
+      });
+
+      viewToggle.addEventListener('click', () => setFallback(!state.fallback));
+
+      if (ctx) {
+        canvas.addEventListener('pointerdown', (event) => {
+          if (state.reduced) return;
+          state.dragging = true;
+          state.pointerX = event.clientX;
+          state.pointerY = event.clientY;
+          canvas.setPointerCapture(event.pointerId);
+        });
+
+        canvas.addEventListener('pointermove', (event) => {
+          if (!state.dragging || state.reduced) return;
+          const dx = event.clientX - state.pointerX;
+          const dy = event.clientY - state.pointerY;
+          state.pointerX = event.clientX;
+          state.pointerY = event.clientY;
+          state.targetYaw += dx * .008;
+          state.targetPitch = Math.max(-.72, Math.min(.58, state.targetPitch + dy * .006));
+        });
+
+        const endDrag = (event) => {
+          state.dragging = false;
+          if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        };
+        canvas.addEventListener('pointerup', endDrag);
+        canvas.addEventListener('pointercancel', endDrag);
+
+        canvas.addEventListener('keydown', (event) => {
+          const amount = event.shiftKey ? .28 : .12;
+          if (event.key === 'ArrowLeft') state.targetYaw -= amount;
+          else if (event.key === 'ArrowRight') state.targetYaw += amount;
+          else if (event.key === 'ArrowUp') state.targetPitch = Math.max(-.72, state.targetPitch - amount);
+          else if (event.key === 'ArrowDown') state.targetPitch = Math.min(.58, state.targetPitch + amount);
+          else if (event.key === '0') {
+            state.targetYaw = -.24;
+            state.targetPitch = -.12;
+          } else return;
+          event.preventDefault();
+        });
+
+        const resizeObserver = new ResizeObserver(() => {
+          resizeCanvas();
+          state.points = buildPoints();
+        });
+        resizeObserver.observe(canvas);
+      }
+
+      const onMotionChange = (event) => {
+        state.reduced = event.matches;
+        state.transitionAt = 0;
+        $('#statusLive').textContent = event.matches
+          ? 'Reduced motion active. Configuration changes remain immediate and complete.'
+          : 'Full causal motion restored.';
+      };
+      if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotionChange);
+      else motionQuery.addListener(onMotionChange);
+
+      document.documentElement.classList.add('enhanced');
+      resizeCanvas();
+      state.points = buildPoints();
+      updateTruth('all', false);
+      setFallback(lowCapability);
+      ensureRendering();
+    })();
+  </script>
+</body>
+</html>

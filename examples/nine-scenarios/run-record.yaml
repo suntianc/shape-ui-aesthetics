@@ -1,0 +1,75 @@
+run: 2026-07-21-nine-scenario-pages
+executor: opencode
+opencode_version: 1.18.3
+model: opencode-go/minimax-m2.7
+model_tier: medium
+models:
+  - opencode-go/minimax-m2.7
+  - opencode-go/mimo-v2.5
+fallback:
+  model: opencode-go/mimo-v2.5
+  reason: minimax socket instability and an OpenCode SQLite write collision during generation
+skill:
+  name: shape-ui-aesthetics
+  version: 1.0.0
+  path: packages/shape-ui-aesthetics
+  legacy_external_skills_disabled: true
+source_runtime_modified: false
+status: complete
+gallery:
+  file: gallery.html
+outputs:
+  - id: creator-portfolio
+    file: creator-portfolio/index.html
+    generation_model: opencode-go/minimax-m2.7
+    sha256: 036097ab69b07ea15aeb8993d6c4bd9984a43a1a86a9cf931ca808f1751c4a78
+  - id: ship-customizer
+    file: ship-customizer/index.html
+    generation_model: opencode-go/minimax-m2.7
+    sha256: e3998d5845924b0c73ba01226066fbf4565df046129ff78f933ab05f63fc876e
+  - id: wildfire-atlas
+    file: wildfire-atlas/index.html
+    generation_model: opencode-go/minimax-m2.7
+    sha256: f697f81509f58755c3d3d8dbbedbf5f485e7bdcfd1ebb66a94c774dc2848d6ba
+  - id: finance-operations
+    file: finance-operations/index.html
+    generation_model: opencode-go/minimax-m2.7
+    sha256: 8365fb29fdea0527b460163ff1b03e796c2031d4305276cb32af94d33173cf89
+  - id: craft-archive
+    file: craft-archive/index.html
+    generation_model: opencode-go/mimo-v2.5
+    sha256: 0e495020f85cc3d6d67b5b0d66695b3afcd9101721f53b2a743231c8369e98c4
+  - id: clinical-alert
+    file: clinical-alert/index.html
+    generation_model: opencode-go/minimax-m2.7
+    sha256: 12ff57c1f3782786c6bcaddcc2c64c1a022117b1f6aade1d7f118ee60b1800f7
+  - id: svg-favorite
+    file: svg-favorite/index.html
+    generation_model: opencode-go/mimo-v2.5
+    sha256: 83fbbda1151795c2fa453e2207cec6448860ab8813cc5198b1564b02d18c4071
+  - id: ai-landing-review
+    file: ai-landing-review/index.html
+    generation_model: opencode-go/mimo-v2.5
+    sha256: e6e6518eef3532eda3f29ed53835b5b91f992f86b2dfaf108b92c1c0b4791ff7
+  - id: logistics-3d-review
+    file: logistics-3d-review/index.html
+    generation_model: opencode-go/mimo-v2.5
+    sha256: a7bec65ab3a6f790350d6686a7466efaf35832993c47c0ca44a9539e562f53e5
+validation:
+  static_pages: 9/9
+  self_contained_runtime_assets: true
+  javascript_syntax: passed
+  visible_focus: 9/9
+  reduced_motion: 9/9
+  responsive_rules: 9/9
+  review_input_output_boundary: 2/2
+  browser_mobile_390px_no_horizontal_overflow: 9/9
+  browser_desktop_1280px_no_horizontal_overflow: 9/9
+  browser_console_error_or_warning_count: 0
+  logistics_runtime_iframe_count: 0
+  legacy_filename_hits: 0
+  installed_skill_quick_validate: passed
+  stable_release_runtime_files: 45
+  stable_release_manifest_checksums_verified: 45
+  source_release_file_parity: true
+  installed_release_verified: true

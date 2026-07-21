@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shape UI 1.0.0 · OpenCode 九场景输出</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: #111; color: #eee; }
+    body { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    header { display: grid; grid-template-columns: minmax(15rem, auto) minmax(0, 1fr); gap: 1rem; align-items: center; padding: .7rem 1rem; border-bottom: 1px solid #393939; background: #171717; }
+    h1 { margin: 0; font: 700 .78rem/1.25 inherit; letter-spacing: .08em; text-transform: uppercase; }
+    nav { display: flex; gap: .35rem; overflow-x: auto; scrollbar-width: thin; }
+    button, a { font: inherit; }
+    button { flex: 0 0 auto; border: 1px solid #444; border-radius: .2rem; padding: .48rem .62rem; color: #aaa; background: #202020; cursor: pointer; }
+    button:hover { color: #fff; border-color: #777; }
+    button[aria-selected="true"] { color: #101010; background: #f3e85a; border-color: #f3e85a; }
+    :focus-visible { outline: 3px solid #56bfff; outline-offset: 2px; }
+    main { position: relative; min-height: 0; }
+    iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+    .meta { position: absolute; right: .8rem; bottom: .8rem; z-index: 2; border: 1px solid #555; padding: .45rem .6rem; color: #ddd; background: rgba(17,17,17,.88); text-decoration: none; }
+    @media (max-width: 760px) { header { grid-template-columns: 1fr; gap: .55rem; padding: .55rem; } h1 { font-size: .68rem; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Shape UI 1.0.0 · OpenCode · 九场景</h1>
+    <nav role="tablist" aria-label="场景页面">
+      <button type="button" role="tab" aria-selected="true" data-page="creator-portfolio/index.html">01 创作者作品集</button>
+      <button type="button" role="tab" aria-selected="false" data-page="ship-customizer/index.html">02 船舶定制</button>
+      <button type="button" role="tab" aria-selected="false" data-page="wildfire-atlas/index.html">03 山火指挥图谱</button>
+      <button type="button" role="tab" aria-selected="false" data-page="finance-operations/index.html">04 财务运营</button>
+      <button type="button" role="tab" aria-selected="false" data-page="craft-archive/index.html">05 工艺档案</button>
+      <button type="button" role="tab" aria-selected="false" data-page="clinical-alert/index.html">06 临床警报</button>
+      <button type="button" role="tab" aria-selected="false" data-page="svg-favorite/index.html">07 收藏控件</button>
+      <button type="button" role="tab" aria-selected="false" data-page="ai-landing-review/index.html">08 AI Landing Review</button>
+      <button type="button" role="tab" aria-selected="false" data-page="logistics-3d-review/index.html">09 3D 物流 Review</button>
+    </nav>
+  </header>
+  <main>
+    <iframe id="stage" title="当前场景页面" src="creator-portfolio/index.html"></iframe>
+    <a class="meta" id="open-page" href="creator-portfolio/index.html" target="_blank" rel="noreferrer">单独打开 ↗</a>
+  </main>
+  <script>
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    const stage = document.querySelector('#stage');
+    const openPage = document.querySelector('#open-page');
+    function selectTab(tab) {
+      tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+      stage.src = tab.dataset.page;
+      stage.title = tab.textContent.trim();
+      openPage.href = tab.dataset.page;
+      history.replaceState(null, '', `#${tab.dataset.page.split('/')[0]}`);
+    }
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => selectTab(tab));
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+        event.preventDefault();
+        const offset = event.key === 'ArrowRight' ? 1 : -1;
+        const next = tabs[(index + offset + tabs.length) % tabs.length];
+        next.focus();
+        selectTab(next);
+      });
+    });
+    const requested = location.hash.slice(1);
+    const initial = tabs.find((tab) => tab.dataset.page.startsWith(`${requested}/`));
+    if (initial) selectTab(initial);
+  </script>
+</body>
+</html>

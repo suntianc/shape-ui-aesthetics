@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Exacta — Finance operations ledger</title>
+  <style>
+    :root {
+      --paper: #f2efe7;
+      --paper-raised: #faf8f1;
+      --paper-deep: #e8e4da;
+      --ink: #171a17;
+      --ink-soft: #50544d;
+      --ink-faint: #767a72;
+      --rule: #c8c4b8;
+      --rule-strong: #9b9c92;
+      --control: #174f5c;
+      --control-soft: #dce8e7;
+      --exception: #b9401e;
+      --exception-soft: #f1d9cb;
+      --success: #2a6850;
+      --success-soft: #d9e7df;
+      --warning: #7a5411;
+      --warning-soft: #eee2c5;
+      --focus: #176d84;
+      --shadow: 0 18px 44px rgba(29, 28, 23, .16);
+      --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Roboto Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Iowan Old Style, Palatino Linotype, Book Antiqua, Palatino, Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--paper); scroll-behavior: smooth; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(23, 26, 23, .025) 1px, transparent 1px) 0 0 / 24px 24px,
+        var(--paper);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    button, input, select { font: inherit; }
+    button, select { color: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    [hidden] { display: none !important; }
+
+    :focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 6px var(--paper-raised);
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 50;
+      top: 8px;
+      left: 8px;
+      padding: 10px 14px;
+      background: var(--ink);
+      color: white;
+      transform: translateY(-150%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .shell {
+      min-height: 100vh;
+      border-top: 5px solid var(--ink);
+      border-left: 7px solid var(--exception);
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto auto;
+      align-items: center;
+      gap: 24px;
+      min-height: 72px;
+      padding: 13px clamp(18px, 3vw, 46px);
+      border-bottom: 1px solid var(--rule-strong);
+      background: rgba(242, 239, 231, .94);
+    }
+
+    .product-mark {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
+    }
+    .product-name {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 27px;
+      font-weight: 600;
+      letter-spacing: -.035em;
+    }
+    .environment {
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+    .sync-status::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      content: "";
+      box-shadow: 0 0 0 3px rgba(42, 104, 80, .12);
+    }
+    .mast-actions { display: flex; align-items: center; gap: 8px; }
+
+    .quiet-button,
+    .primary-button,
+    .danger-button,
+    .icon-button,
+    .text-button {
+      min-height: 38px;
+      border: 1px solid var(--rule-strong);
+      border-radius: 2px;
+      background: transparent;
+      padding: 8px 12px;
+      font-weight: 650;
+    }
+    .quiet-button:hover, .icon-button:hover { background: var(--paper-raised); border-color: var(--ink); }
+    .primary-button { border-color: var(--control); background: var(--control); color: #fff; }
+    .primary-button:hover { background: #0f3f4a; }
+    .danger-button { border-color: var(--exception); color: var(--exception); }
+    .danger-button:hover { background: var(--exception-soft); }
+    .text-button {
+      min-height: 30px;
+      border-color: transparent;
+      padding: 4px 7px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    kbd {
+      border: 1px solid var(--rule);
+      background: var(--paper-raised);
+      padding: 1px 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .capital-register {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(440px, 1.9fr);
+      gap: clamp(28px, 5vw, 88px);
+      padding: 30px clamp(18px, 3vw, 46px) 25px;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 47px, rgba(23,26,23,.055) 47px 48px),
+        var(--paper-raised);
+      border-bottom: 1px solid var(--ink);
+    }
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .position-value {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(37px, 5.6vw, 73px);
+      font-weight: 500;
+      letter-spacing: -.045em;
+      line-height: .95;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    .position-note {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin-top: 14px;
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+    .position-note strong { color: var(--success); }
+
+    .account-rail {
+      align-self: end;
+      min-width: 0;
+    }
+    .rail-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 9px;
+    }
+    .rail-heading p { margin: 0; }
+    .rail-total { color: var(--ink-soft); font-family: var(--mono); font-size: 11px; }
+    .allocation {
+      display: grid;
+      grid-template-columns: minmax(110px, 20fr) minmax(90px, 6fr) minmax(170px, 74fr);
+      min-height: 74px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+    }
+    .allocation-segment {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+      padding: 10px 11px 9px;
+      border-right: 1px solid var(--rule-strong);
+      text-align: left;
+      background: rgba(250,248,241,.76);
+    }
+    .allocation-segment:last-child { border-right: 0; }
+    .allocation-segment:hover { background: var(--control-soft); }
+    .allocation-segment::before {
+      position: absolute;
+      top: -4px;
+      left: -1px;
+      width: calc(100% + 1px);
+      height: 4px;
+      background: var(--control);
+      content: "";
+      transform-origin: left;
+      transition: transform .18s ease;
+    }
+    .allocation-segment:hover::before { transform: scaleY(1.8); }
+    .allocation-segment small { color: var(--ink-soft); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .allocation-segment strong { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+    .command-deck {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      min-height: 61px;
+      padding: 0 clamp(18px, 3vw, 46px);
+      border-bottom: 1px solid var(--rule-strong);
+      background: rgba(242, 239, 231, .97);
+      backdrop-filter: blur(12px);
+    }
+    .view-tabs {
+      display: flex;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .view-tab {
+      position: relative;
+      flex: 0 0 auto;
+      min-height: 60px;
+      border: 0;
+      border-right: 1px solid var(--rule);
+      background: transparent;
+      padding: 10px 23px;
+      color: var(--ink-soft);
+      font-weight: 650;
+    }
+    .view-tab:first-child { border-left: 1px solid var(--rule); }
+    .view-tab[aria-selected="true"] { color: var(--ink); background: var(--paper-raised); }
+    .view-tab[aria-selected="true"]::after {
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      left: -1px;
+      height: 4px;
+      background: var(--exception);
+      content: "";
+    }
+    .tab-count { margin-left: 7px; color: var(--ink-faint); font-family: var(--mono); font-size: 11px; }
+    .deck-tools { display: flex; align-items: center; gap: 8px; }
+    .state-picker {
+      min-height: 38px;
+      border: 1px solid var(--rule-strong);
+      border-radius: 2px;
+      background: var(--paper-raised);
+      padding: 7px 29px 7px 10px;
+      font-size: 12px;
+    }
+
+    .notice {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+      margin: 18px clamp(18px, 3vw, 46px) 0;
+      padding: 12px 14px;
+      border: 1px solid var(--rule-strong);
+      border-left: 5px solid var(--control);
+      background: var(--paper-raised);
+    }
+    .notice strong { font-family: var(--serif); font-size: 17px; }
+    .notice p { margin: 1px 0 0; color: var(--ink-soft); font-size: 12px; }
+    .notice.error { border-left-color: var(--exception); }
+    .notice.success { border-left-color: var(--success); }
+    .status-symbol {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      font-weight: 800;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.72fr) minmax(320px, .74fr);
+      min-height: 650px;
+      margin: 24px clamp(18px, 3vw, 46px) 44px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      background: var(--paper-raised);
+      box-shadow: var(--shadow);
+    }
+    .ledger-pane { min-width: 0; }
+    .ledger-heading {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 16px;
+      min-height: 105px;
+      padding: 23px 25px 20px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .ledger-heading h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(26px, 3.5vw, 43px);
+      font-weight: 500;
+      letter-spacing: -.035em;
+      line-height: 1;
+    }
+    .ledger-heading p { max-width: 56ch; margin: 8px 0 0; color: var(--ink-soft); font-size: 12px; }
+    .ledger-meta { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; text-align: right; text-transform: uppercase; }
+
+    .batch-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 43px;
+      padding: 8px 25px;
+      border-bottom: 1px solid var(--rule);
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+    .batch-hint code { color: var(--ink); font-family: var(--mono); font-size: 10px; }
+
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    th {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--rule-strong);
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child { width: 46px; padding-left: 20px; }
+    td {
+      position: relative;
+      padding: 16px 12px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: middle;
+    }
+    tbody tr { transition: background-color .16s ease; }
+    tbody tr:hover { background: #f1eee5; }
+    tbody tr.is-selected { background: var(--exception-soft); }
+    tbody tr.is-selected td:first-child::before {
+      position: absolute;
+      top: 0;
+      bottom: -1px;
+      left: 0;
+      width: 6px;
+      background: var(--exception);
+      content: "";
+    }
+    tbody tr.is-cleared { opacity: .52; }
+    input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      margin: 0;
+      accent-color: var(--control);
+    }
+    .row-open {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      text-align: left;
+    }
+    .row-open strong { font-size: 13px; }
+    .row-open:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+    .subline { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+    .money { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .state-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      border: 1px solid currentColor;
+      border-radius: 99px;
+      padding: 2px 8px;
+      color: var(--ink-soft);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: .03em;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    .state-chip::before { content: "◆"; font-size: 7px; }
+    .state-chip.high { color: var(--exception); background: rgba(185,64,30,.045); }
+    .state-chip.review { color: var(--warning); background: rgba(122,84,17,.045); }
+    .state-chip.ready { color: var(--success); background: rgba(42,104,80,.04); }
+    .state-chip.denied { color: var(--ink-faint); border-style: dashed; }
+    .due { font-size: 11px; white-space: nowrap; }
+    .due strong { display: block; color: var(--exception); font-family: var(--mono); }
+
+    .detail-margin {
+      position: relative;
+      min-width: 0;
+      border-left: 1px solid var(--ink);
+      background: var(--ink);
+      color: #f7f3e9;
+    }
+    .detail-margin::before {
+      position: absolute;
+      z-index: 2;
+      top: 130px;
+      left: -13px;
+      width: 24px;
+      height: 24px;
+      border-bottom: 1px solid var(--ink);
+      border-left: 1px solid var(--ink);
+      background: var(--ink);
+      content: "";
+      transform: rotate(45deg);
+    }
+    .detail-inner { position: sticky; top: 61px; padding: 26px 26px 28px; }
+    .detail-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+    .detail-kicker { color: #aeb6ad; font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
+    .sheet-close {
+      display: none;
+      width: 38px;
+      height: 38px;
+      border: 1px solid #697069;
+      border-radius: 50%;
+      background: transparent;
+      color: white;
+    }
+    .detail-margin h3 { margin: 0; font-family: var(--serif); font-size: 29px; font-weight: 500; line-height: 1.05; }
+    .detail-summary { margin: 9px 0 24px; color: #bdc4bb; }
+    .change-block {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin: 0 -26px 23px;
+      padding: 16px 26px;
+      border-top: 1px solid #50564f;
+      border-bottom: 1px solid #50564f;
+      background: #202520;
+    }
+    .change-block small { display: block; color: #929a91; font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
+    .change-block strong { font-family: var(--mono); font-size: 12px; }
+    .change-arrow { color: #d87b59; font-size: 20px; }
+    .facts { margin: 0 0 22px; }
+    .fact {
+      display: grid;
+      grid-template-columns: minmax(78px, .7fr) minmax(0, 1.3fr);
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #3f453f;
+    }
+    .fact dt { color: #939b92; font-size: 11px; }
+    .fact dd { margin: 0; text-align: right; font-size: 12px; }
+    .permission-rule {
+      margin: 0 0 20px;
+      padding: 12px 13px;
+      border-left: 3px solid #d27a58;
+      background: #252b26;
+      color: #d7ddd4;
+      font-size: 11px;
+    }
+    .evidence-list { display: grid; gap: 7px; margin: 0 0 24px; padding: 0; list-style: none; }
+    .evidence-list li { display: flex; align-items: center; gap: 9px; color: #cbd2c8; font-size: 11px; }
+    .evidence-list li::before {
+      display: grid;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid #687069;
+      border-radius: 50%;
+      content: "✓";
+      color: #8bc4a7;
+      font-size: 9px;
+    }
+    .evidence-list li.missing::before { content: "!"; color: #f3a582; border-color: #b76344; }
+    .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .detail-actions .primary-button, .detail-actions .quiet-button, .detail-actions .danger-button { min-height: 44px; }
+    .detail-actions .quiet-button { border-color: #727a72; color: white; }
+    .detail-actions .quiet-button:hover { background: #2a302b; }
+    .detail-actions .wide { grid-column: 1 / -1; }
+    .disabled-reason { grid-column: 1 / -1; margin: 0; color: #9da59d; font-size: 10px; }
+
+    .account-ledger { padding: 0 25px 25px; }
+    .account-line {
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) minmax(130px, .7fr) minmax(110px, .6fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 21px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .account-line h3 { margin: 0; font-family: var(--serif); font-size: 20px; font-weight: 500; }
+    .account-line p { margin: 2px 0 0; color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+    .account-line .balance { font-family: var(--mono); font-size: 14px; text-align: right; }
+    .account-line .permission { color: var(--ink-soft); font-size: 11px; }
+
+    .audit-stream { margin: 0; padding: 0 25px 28px; list-style: none; }
+    .audit-entry {
+      display: grid;
+      grid-template-columns: 78px 16px minmax(0, 1fr) auto;
+      gap: 13px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .audit-time { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+    .audit-marker { position: relative; }
+    .audit-marker::before { position: absolute; top: 4px; left: 3px; width: 8px; height: 8px; border: 2px solid var(--control); border-radius: 50%; content: ""; }
+    .audit-marker::after { position: absolute; top: 18px; bottom: -25px; left: 7px; width: 1px; background: var(--rule-strong); content: ""; }
+    .audit-entry:last-child .audit-marker::after { display: none; }
+    .audit-copy strong { display: block; }
+    .audit-copy p { margin: 3px 0 0; color: var(--ink-soft); font-size: 12px; }
+    .audit-id { color: var(--ink-faint); font-family: var(--mono); font-size: 10px; }
+
+    .state-stage {
+      margin: 24px clamp(18px, 3vw, 46px) 44px;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      background: var(--paper-raised);
+      box-shadow: var(--shadow);
+    }
+    .state-stage-inner { display: grid; min-height: 420px; place-items: center; padding: 42px; text-align: center; }
+    .state-stage h2 { margin: 0; font-family: var(--serif); font-size: 34px; font-weight: 500; }
+    .state-stage p { max-width: 48ch; margin: 10px auto 21px; color: var(--ink-soft); }
+    .skeleton-ledger { width: min(640px, 100%); margin-top: 28px; text-align: left; }
+    .skeleton-row {
+      position: relative;
+      height: 46px;
+      margin-top: 8px;
+      overflow: hidden;
+      border: 1px solid var(--rule);
+      background: var(--paper-deep);
+    }
+    .skeleton-row::after {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+      content: "";
+      animation: scan 1.5s linear infinite;
+      transform: translateX(-100%);
+    }
+    @keyframes scan { to { transform: translateX(100%); } }
+
+    .bulk-tray {
+      position: fixed;
+      z-index: 35;
+      right: clamp(14px, 3vw, 46px);
+      bottom: 18px;
+      left: clamp(14px, 3vw, 46px);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 20px;
+      padding: 13px 14px 13px 20px;
+      border: 1px solid #4f584f;
+      border-left: 6px solid var(--exception);
+      background: var(--ink);
+      color: white;
+      box-shadow: 0 22px 60px rgba(0,0,0,.32);
+    }
+    .bulk-copy { display: flex; align-items: baseline; gap: 13px; }
+    .bulk-copy strong { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+    .bulk-copy span { color: #adb5ac; font-size: 11px; }
+    .bulk-actions { display: flex; gap: 7px; }
+    .bulk-actions button { border-color: #6e776f; color: white; }
+
+    .recovery-strip {
+      position: fixed;
+      z-index: 36;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: min(440px, calc(100vw - 36px));
+      padding: 13px 14px;
+      border-left: 5px solid var(--success);
+      background: var(--ink);
+      color: white;
+      box-shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
+    .recovery-strip span { color: #c3cac1; font-size: 12px; }
+    .recovery-strip button { color: white; }
+
+    dialog {
+      width: min(580px, calc(100vw - 28px));
+      max-height: calc(100vh - 40px);
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      background: var(--paper-raised);
+      color: var(--ink);
+      padding: 0;
+      box-shadow: 0 28px 90px rgba(0,0,0,.3);
+    }
+    dialog::backdrop { background: rgba(20,22,19,.62); backdrop-filter: blur(3px); }
+    .dialog-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding: 22px 24px 17px; border-bottom: 1px solid var(--ink); }
+    .dialog-head h2 { margin: 0; font-family: var(--serif); font-size: 27px; font-weight: 500; }
+    .dialog-head p { margin: 4px 0 0; color: var(--ink-soft); font-size: 12px; }
+    .dialog-body { padding: 22px 24px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 24px; border-top: 1px solid var(--rule); }
+    .close-dialog { width: 38px; height: 38px; border: 1px solid var(--rule-strong); background: transparent; }
+    .search-field { width: 100%; min-height: 48px; border: 1px solid var(--ink); background: white; padding: 10px 13px; }
+    .search-results { margin: 16px 0 0; padding: 0; list-style: none; }
+    .search-results li { padding: 11px 0; border-bottom: 1px solid var(--rule); }
+    .search-results button { width: 100%; border: 0; background: transparent; text-align: left; }
+    .permission-matrix { width: 100%; }
+    .permission-matrix td:first-child { width: auto; padding-left: 12px; }
+    .permission-note { margin: 0 0 16px; padding: 11px 12px; border-left: 4px solid var(--control); background: var(--control-soft); font-size: 12px; }
+    .confirm-list { margin: 0; padding: 0; list-style: none; }
+    .confirm-list li { display: flex; justify-content: space-between; gap: 20px; padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 12px; }
+    .confirm-list li span:last-child { color: var(--ink-soft); font-family: var(--mono); }
+
+    .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+
+    @media (max-width: 980px) {
+      .masthead { grid-template-columns: 1fr auto; gap: 10px; }
+      .sync-status { display: none; }
+      .capital-register { grid-template-columns: 1fr; gap: 26px; }
+      .workspace { grid-template-columns: minmax(0, 1.38fr) minmax(290px, .72fr); }
+      th:nth-child(5), td:nth-child(5) { display: none; }
+      .detail-inner { padding-inline: 20px; }
+      .change-block { margin-inline: -20px; padding-inline: 20px; }
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 13px; }
+      .shell { border-left-width: 4px; }
+      .masthead { min-height: 62px; padding: 10px 14px; }
+      .environment { display: none; }
+      .product-name { font-size: 24px; }
+      .mast-actions { gap: 6px; }
+      .mast-actions .quiet-button { padding-inline: 10px; }
+      .mast-actions #openSearch kbd { display: none; }
+      .capital-register { padding: 24px 14px 20px; }
+      .position-value { font-size: clamp(39px, 12.2vw, 58px); }
+      .position-note { font-size: 11px; }
+      .allocation { grid-template-columns: 1fr; min-height: 0; border-bottom: 0; }
+      .allocation-segment { min-height: 54px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      .allocation-segment::before { top: 0; bottom: 0; left: 0; width: 4px; height: auto; }
+      .allocation-segment:hover::before { transform: scaleX(1.8); }
+      .command-deck { grid-template-columns: 1fr auto; padding: 0 0 0 14px; }
+      .view-tab { min-height: 56px; padding-inline: 16px; }
+      .deck-tools { padding-right: 10px; }
+      .state-picker { width: 40px; padding-inline: 8px; color: transparent; background-color: var(--paper-raised); }
+      .state-picker option { color: var(--ink); }
+      .deck-tools .quiet-button { min-height: 40px; padding-inline: 9px; font-size: 0; }
+      #exportCurrent::before { content: "Export"; font-size: 10px; }
+      .notice { grid-template-columns: auto 1fr; margin: 12px 12px 0; }
+      .notice > button { grid-column: 2; justify-self: start; }
+      .workspace { display: block; min-height: 0; margin: 15px 12px 38px; box-shadow: none; }
+      .ledger-heading { min-height: 91px; padding: 19px 16px 17px; }
+      .ledger-heading h2 { font-size: 30px; }
+      .ledger-meta { display: none; }
+      .batch-hint { padding-inline: 16px; }
+      .batch-hint span:last-child { display: none; }
+      .table-wrap { overflow: visible; }
+      table, tbody { display: block; }
+      thead { display: none; }
+      tbody tr {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        padding: 14px 12px 12px;
+        border-bottom: 1px solid var(--rule-strong);
+      }
+      tbody tr.is-selected td:first-child::before { top: -14px; bottom: -12px; left: -12px; }
+      td { display: block; padding: 4px 4px; border: 0; }
+      td:first-child { grid-row: 1 / 3; width: auto; padding: 6px 0 0; }
+      td:nth-child(2) { grid-column: 2 / -1; }
+      td:nth-child(3) { grid-column: 2; }
+      td:nth-child(4) { grid-column: 3; grid-row: 2; text-align: right; }
+      td:nth-child(5) { display: block; grid-column: 2; }
+      td:nth-child(6) { grid-column: 3; grid-row: 3; text-align: right; }
+      td[data-label]::before { display: block; color: var(--ink-faint); content: attr(data-label); font-family: var(--mono); font-size: 8px; letter-spacing: .09em; text-transform: uppercase; }
+      td:nth-child(2)::before { display: none; }
+      .detail-margin {
+        position: fixed;
+        z-index: 42;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        max-height: 86vh;
+        border-top: 4px solid var(--exception);
+        border-left: 0;
+        overflow: auto;
+        box-shadow: 0 -24px 70px rgba(0,0,0,.34);
+        transform: translateY(105%);
+        transition: transform .22s ease;
+      }
+      .detail-margin.is-open { transform: translateY(0); }
+      .detail-margin::before { display: none; }
+      .detail-inner { position: static; padding: 20px 18px calc(26px + env(safe-area-inset-bottom)); }
+      .detail-topline { margin-bottom: 18px; }
+      .sheet-close { display: inline-grid; place-items: center; }
+      .detail-margin h3 { font-size: 27px; }
+      .change-block { margin-inline: -18px; padding-inline: 18px; }
+      .account-ledger { padding-inline: 16px; }
+      .account-line { grid-template-columns: 1fr auto; gap: 10px; }
+      .account-line .permission { grid-column: 1; }
+      .account-line button { grid-column: 2; grid-row: 1 / 3; justify-self: start; }
+      .audit-stream { padding-inline: 16px; }
+      .audit-entry { grid-template-columns: 60px 14px 1fr; }
+      .audit-id { grid-column: 3; }
+      .state-stage { margin: 15px 12px 38px; box-shadow: none; }
+      .state-stage-inner { min-height: 380px; padding: 30px 18px; }
+      .bulk-tray { grid-template-columns: 1fr; gap: 9px; right: 10px; bottom: 10px; left: 10px; padding: 11px 11px 11px 15px; }
+      .bulk-copy span { display: none; }
+      .bulk-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
+      .bulk-actions button { min-height: 42px; padding-inline: 7px; }
+      .recovery-strip { right: 10px; bottom: 10px; left: 10px; max-width: none; }
+    }
+
+    @media (max-width: 430px) {
+      .position-value { font-size: 11.7vw; }
+      .rail-heading { align-items: start; flex-direction: column; gap: 2px; }
+      .view-tab { padding-inline: 13px; }
+      .fact { grid-template-columns: 1fr; gap: 3px; }
+      .fact dd { text-align: left; }
+      .account-line { display: grid; grid-template-columns: 1fr; }
+      .account-line .balance { text-align: left; }
+      .account-line button { grid-column: 1; grid-row: auto; justify-self: start; }
+      .audit-entry { grid-template-columns: 52px 12px 1fr; gap: 7px; }
+      .bulk-copy strong { font-size: 19px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      .skeleton-row::after { display: none; }
+    }
+
+    @media (forced-colors: active) {
+      .shell, .notice, .bulk-tray, .recovery-strip { border-left-color: Highlight; }
+      .state-chip::before { content: "["; }
+      .detail-margin { border: 2px solid CanvasText; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to operations</a>
+  <div class="shell">
+    <header class="masthead">
+      <div class="product-mark">
+        <h1 class="product-name">Exacta</h1>
+        <span class="environment">Finance controls / US</span>
+      </div>
+      <span class="sync-status" id="syncStatus">Ledger current · 10:42:18</span>
+      <div class="mast-actions">
+        <button class="quiet-button" type="button" id="openSearch">Find <kbd>⌘ K</kbd></button>
+        <button class="quiet-button" type="button" id="openPermissions">Alex Chen · Controller</button>
+      </div>
+    </header>
+
+    <section class="capital-register" aria-labelledby="cash-position-title">
+      <div>
+        <p class="eyebrow" id="cash-position-title">Cleared cash position · 3 accounts</p>
+        <p class="position-value">$6,534,818.89</p>
+        <div class="position-note">
+          <span><strong>+$182,440.31</strong> since prior close</span>
+          <span>2 holds · $135,332.00</span>
+          <span>As of 10:42 MST</span>
+        </div>
+      </div>
+      <div class="account-rail" aria-label="Account allocation">
+        <div class="rail-heading">
+          <p class="eyebrow">Account register / available balance</p>
+          <p class="rail-total">FDIC allocation reviewed 08 Jul</p>
+        </div>
+        <div class="allocation">
+          <button class="allocation-segment" type="button" data-open-account="operating">
+            <small>Operating · 2847</small>
+            <strong>$1,284,620.17</strong>
+          </button>
+          <button class="allocation-segment" type="button" data-open-account="payroll">
+            <small>Payroll · 0192</small>
+            <strong>$348,112.42</strong>
+          </button>
+          <button class="allocation-segment" type="button" data-open-account="treasury">
+            <small>Treasury · 7031</small>
+            <strong>$4,902,086.30</strong>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <nav class="command-deck" aria-label="Operations views">
+      <div class="view-tabs" role="tablist" aria-label="Finance operation views">
+        <button class="view-tab" id="tab-exceptions" type="button" role="tab" aria-selected="true" aria-controls="panel-exceptions" data-view="exceptions">Exceptions <span class="tab-count">04</span></button>
+        <button class="view-tab" id="tab-approvals" type="button" role="tab" aria-selected="false" aria-controls="panel-approvals" data-view="approvals" tabindex="-1">Approvals <span class="tab-count">07</span></button>
+        <button class="view-tab" id="tab-accounts" type="button" role="tab" aria-selected="false" aria-controls="panel-accounts" data-view="accounts" tabindex="-1">Accounts <span class="tab-count">03</span></button>
+        <button class="view-tab" id="tab-audit" type="button" role="tab" aria-selected="false" aria-controls="panel-audit" data-view="audit" tabindex="-1">Audit <span class="tab-count">128</span></button>
+      </div>
+      <div class="deck-tools">
+        <button class="quiet-button" type="button" id="exportCurrent">Export current view</button>
+        <label>
+          <span class="visually-hidden">Preview system state</span>
+          <select class="state-picker" id="statePicker" aria-label="Preview system state">
+            <option value="live">State · Live</option>
+            <option value="loading">State · Loading</option>
+            <option value="error">State · Error</option>
+            <option value="empty">State · Empty</option>
+            <option value="success">State · Success</option>
+          </select>
+        </label>
+      </div>
+    </nav>
+
+    <div id="noticeRegion" aria-live="polite"></div>
+
+    <main id="main-content">
+      <div class="workspace" id="liveWorkspace">
+        <section class="ledger-pane" id="panel-exceptions" role="tabpanel" aria-labelledby="tab-exceptions">
+          <header class="ledger-heading">
+            <div>
+              <p class="eyebrow">Resolution docket · highest consequence first</p>
+              <h2>Four breaks in the line.</h2>
+              <p>Resolve evidence, ownership, and approval constraints while the full transaction trail stays visible.</p>
+            </div>
+            <div class="ledger-meta">Scope 03 accounts<br>Window today</div>
+          </header>
+          <div class="batch-hint">
+            <span>Select records to act in one controlled batch.</span>
+            <span><code>Shift + ↓</code> extends selection</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <caption>Finance exceptions requiring review</caption>
+              <thead>
+                <tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Exception / counterparty</th><th scope="col">Amount</th><th scope="col">Control break</th><th scope="col">Owner</th><th scope="col">Action window</th></tr>
+              </thead>
+              <tbody>
+                <tr class="is-selected" data-record="ex-4821">
+                  <td><input class="row-select" type="checkbox" aria-label="Select exception EX-4821"></td>
+                  <td data-label="Exception"><button class="row-open" type="button" data-detail="ex-4821"><strong>Kestrel Paper Co.</strong><span class="subline">EX-4821 · ACH · Operating 2847</span></button></td>
+                  <td class="money" data-label="Amount">$48,920.00</td>
+                  <td data-label="Control break"><span class="state-chip high">Bank change</span></td>
+                  <td data-label="Owner">Inez Park</td>
+                  <td class="due" data-label="Action window"><strong>01h 18m</strong>14:00 cut-off</td>
+                </tr>
+                <tr data-record="ex-4819">
+                  <td><input class="row-select" type="checkbox" aria-label="Select exception EX-4819"></td>
+                  <td data-label="Exception"><button class="row-open" type="button" data-detail="ex-4819"><strong>Northline Freight</strong><span class="subline">EX-4819 · Wire · Treasury 7031</span></button></td>
+                  <td class="money" data-label="Amount">$12,880.40</td>
+                  <td data-label="Control break"><span class="state-chip review">Receipt mismatch</span></td>
+                  <td data-label="Owner">Omar Velez</td>
+                  <td class="due" data-label="Action window">Today<strong>16:30</strong></td>
+                </tr>
+                <tr data-record="ex-4814">
+                  <td><input class="row-select" type="checkbox" aria-label="Select exception EX-4814"></td>
+                  <td data-label="Exception"><button class="row-open" type="button" data-detail="ex-4814"><strong>Clarity Benefits</strong><span class="subline">EX-4814 · ACH · Payroll 0192</span></button></td>
+                  <td class="money" data-label="Amount">$86,412.00</td>
+                  <td data-label="Control break"><span class="state-chip high">Duplicate suspect</span></td>
+                  <td data-label="Owner">Mara Hill</td>
+                  <td class="due" data-label="Action window">On hold<strong>No release</strong></td>
+                </tr>
+                <tr data-record="ex-4809">
+                  <td><input class="row-select" type="checkbox" aria-label="Select exception EX-4809"></td>
+                  <td data-label="Exception"><button class="row-open" type="button" data-detail="ex-4809"><strong>Meterworks Ltd.</strong><span class="subline">EX-4809 · Bill pay · Operating 2847</span></button></td>
+                  <td class="money" data-label="Amount">$3,204.90</td>
+                  <td data-label="Control break"><span class="state-chip review">Tax ID expired</span></td>
+                  <td data-label="Owner">Unassigned</td>
+                  <td class="due" data-label="Action window">Tomorrow<strong>09:00</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="ledger-pane" id="panel-approvals" role="tabpanel" aria-labelledby="tab-approvals" hidden>
+          <header class="ledger-heading">
+            <div>
+              <p class="eyebrow">Approval run · 7 waiting / $274,380.44</p>
+              <h2>Release only what is ready.</h2>
+              <p>Authority, evidence, and separation-of-duties checks travel with every payment.</p>
+            </div>
+            <div class="ledger-meta">Ready 05<br>Held 02</div>
+          </header>
+          <div class="batch-hint"><span>Five payments can be approved within your authority.</span><span><code>Space</code> selects a record</span></div>
+          <div class="table-wrap">
+            <table>
+              <caption>Payments waiting for approval</caption>
+              <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Payment / counterparty</th><th scope="col">Amount</th><th scope="col">Readiness</th><th scope="col">Submitted by</th><th scope="col">Release</th></tr></thead>
+              <tbody>
+                <tr data-record="ap-7312"><td><input class="row-select" type="checkbox" aria-label="Select approval AP-7312"></td><td data-label="Payment"><button class="row-open" type="button" data-detail="ap-7312"><strong>Arbor Hosting, Inc.</strong><span class="subline">AP-7312 · Subscription renewal</span></button></td><td class="money" data-label="Amount">$24,600.00</td><td data-label="Readiness"><span class="state-chip ready">Ready</span></td><td data-label="Submitted by">J. Lawson</td><td class="due" data-label="Release">Today<strong>15:00</strong></td></tr>
+                <tr data-record="ap-7308"><td><input class="row-select" type="checkbox" aria-label="Select approval AP-7308"></td><td data-label="Payment"><button class="row-open" type="button" data-detail="ap-7308"><strong>Turner & Moss</strong><span class="subline">AP-7308 · Legal services</span></button></td><td class="money" data-label="Amount">$39,800.00</td><td data-label="Readiness"><span class="state-chip ready">Ready</span></td><td data-label="Submitted by">I. Park</td><td class="due" data-label="Release">Today<strong>17:00</strong></td></tr>
+                <tr data-record="ap-7304"><td><input class="row-select" type="checkbox" aria-label="Select approval AP-7304"></td><td data-label="Payment"><button class="row-open" type="button" data-detail="ap-7304"><strong>Red Mesa Facilities</strong><span class="subline">AP-7304 · Quarterly services</span></button></td><td class="money" data-label="Amount">$112,400.00</td><td data-label="Readiness"><span class="state-chip denied">Second approver</span></td><td data-label="Submitted by">M. Hill</td><td class="due" data-label="Release">Awaiting<strong>T. Bell</strong></td></tr>
+                <tr data-record="ap-7297"><td><input class="row-select" type="checkbox" aria-label="Select approval AP-7297"></td><td data-label="Payment"><button class="row-open" type="button" data-detail="ap-7297"><strong>Novum Analytics</strong><span class="subline">AP-7297 · Annual license</span></button></td><td class="money" data-label="Amount">$18,450.44</td><td data-label="Readiness"><span class="state-chip ready">Ready</span></td><td data-label="Submitted by">O. Velez</td><td class="due" data-label="Release">Tomorrow<strong>09:00</strong></td></tr>
+                <tr data-record="ap-7289"><td><input class="row-select" type="checkbox" aria-label="Select approval AP-7289"></td><td data-label="Payment"><button class="row-open" type="button" data-detail="ap-7289"><strong>Sunward Insurance</strong><span class="subline">AP-7289 · Policy installment</span></button></td><td class="money" data-label="Amount">$79,130.00</td><td data-label="Readiness"><span class="state-chip denied">Above limit</span></td><td data-label="Submitted by">J. Lawson</td><td class="due" data-label="Release">Escalated<strong>Director</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="ledger-pane" id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" hidden>
+          <header class="ledger-heading">
+            <div><p class="eyebrow">Account register · permission-aware</p><h2>Three sources. One controlled line.</h2><p>Balances, holds, reconciliation, and access remain readable together.</p></div>
+            <div class="ledger-meta">Reconciled 03<br>Restricted 01</div>
+          </header>
+          <div class="account-ledger">
+            <article class="account-line" id="account-operating">
+              <div><h3>Operating</h3><p>Pioneer Bank · •••• 2847</p></div><div class="balance">$1,284,620.17<br><span class="state-chip ready">Reconciled</span></div><div class="permission">Controller · approve ≤ $50k<br>2 active holds · $48,920.00</div><button class="quiet-button" type="button" data-open-account="operating">Inspect account</button>
+            </article>
+            <article class="account-line" id="account-payroll">
+              <div><h3>Payroll</h3><p>Pioneer Bank · •••• 0192</p></div><div class="balance">$348,112.42<br><span class="state-chip review">1 hold</span></div><div class="permission">View + prepare only<br>Release requires Payroll Admin</div><button class="quiet-button" type="button" data-open-account="payroll">Inspect account</button>
+            </article>
+            <article class="account-line" id="account-treasury">
+              <div><h3>Treasury</h3><p>Harbor National · •••• 7031</p></div><div class="balance">$4,902,086.30<br><span class="state-chip ready">Reconciled</span></div><div class="permission">Controller · dual approval<br>Wire template edit restricted</div><button class="quiet-button" type="button" data-open-account="treasury">Inspect account</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="ledger-pane" id="panel-audit" role="tabpanel" aria-labelledby="tab-audit" hidden>
+          <header class="ledger-heading">
+            <div><p class="eyebrow">Immutable activity · 128 events / 30 days</p><h2>Every hand on the line.</h2><p>Actor, authority, object, prior state, and recovery remain attached to each event.</p></div>
+            <div class="ledger-meta">Export CSV / PDF<br>Retention 7 years</div>
+          </header>
+          <ol class="audit-stream" id="auditTrail">
+            <li class="audit-entry"><time class="audit-time">10:38:42</time><span class="audit-marker"></span><div class="audit-copy"><strong>Bank-change exception opened</strong><p>Inez Park edited Kestrel Paper Co. payout destination. Automatic release was blocked.</p></div><span class="audit-id">EVT-19882</span></li>
+            <li class="audit-entry"><time class="audit-time">10:34:09</time><span class="audit-marker"></span><div class="audit-copy"><strong>Approval restored after recovery</strong><p>Alex Chen undid batch RUN-184. Three payments returned to Ready.</p></div><span class="audit-id">EVT-19881</span></li>
+            <li class="audit-entry"><time class="audit-time">10:21:16</time><span class="audit-marker"></span><div class="audit-copy"><strong>Second approver requested</strong><p>Mara Hill requested T. Bell for Red Mesa Facilities · $112,400.00.</p></div><span class="audit-id">EVT-19879</span></li>
+            <li class="audit-entry"><time class="audit-time">09:58:03</time><span class="audit-marker"></span><div class="audit-copy"><strong>Receipt evidence replaced</strong><p>Omar Velez uploaded Northline Freight receipt v3; mismatch remains $220.40.</p></div><span class="audit-id">EVT-19873</span></li>
+            <li class="audit-entry"><time class="audit-time">09:40:55</time><span class="audit-marker"></span><div class="audit-copy"><strong>Payroll access narrowed</strong><p>Priya Shah changed Alex Chen from Approver to Preparer on Payroll 0192.</p></div><span class="audit-id">EVT-19870</span></li>
+          </ol>
+        </section>
+
+        <aside class="detail-margin is-open" id="detailMargin" aria-labelledby="detailTitle">
+          <div class="detail-inner">
+            <div class="detail-topline"><span class="detail-kicker" id="detailKicker">Exception EX-4821 / control docket</span><button class="sheet-close" id="closeDetail" type="button" aria-label="Close detail">×</button></div>
+            <h3 id="detailTitle">Kestrel Paper Co.</h3>
+            <p class="detail-summary" id="detailSummary">Payout destination changed 42 minutes before release.</p>
+            <div class="change-block" id="detailChange"><div><small>Previous bank</small><strong>•••• 4110</strong></div><span class="change-arrow">→</span><div><small>Proposed bank</small><strong>•••• 7823</strong></div></div>
+            <dl class="facts" id="detailFacts">
+              <div class="fact"><dt>Amount</dt><dd>$48,920.00 USD</dd></div>
+              <div class="fact"><dt>Submitted</dt><dd>Inez Park · 10:00</dd></div>
+              <div class="fact"><dt>Release path</dt><dd>ACH · Operating 2847</dd></div>
+              <div class="fact"><dt>Approvers</dt><dd>Alex Chen + T. Bell</dd></div>
+            </dl>
+            <p class="permission-rule" id="permissionRule">Your Controller role can approve up to $50,000. Bank-detail changes always require a second approver and verified callback.</p>
+            <ul class="evidence-list" id="evidenceList"><li>Invoice INV-2026-188 attached</li><li>Change request signed by vendor</li><li class="missing">Verified callback missing</li><li class="missing">Second approver not yet present</li></ul>
+            <div class="detail-actions" id="detailActions">
+              <button class="primary-button" type="button" id="approveOne" disabled>Approve release</button>
+              <button class="danger-button" type="button" id="holdOne">Keep on hold</button>
+              <button class="quiet-button wide" type="button" id="requestEvidence">Request missing evidence</button>
+              <p class="disabled-reason" id="disabledReason">Approval unlocks after callback evidence and T. Bell sign-off.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="state-stage" id="stateStage" aria-live="polite" hidden></section>
+    </main>
+  </div>
+
+  <div class="bulk-tray" id="bulkTray" role="region" aria-label="Bulk actions" hidden>
+    <div class="bulk-copy"><strong><span id="selectionCount">0</span> selected</strong><span id="selectionAmount">$0.00 in current scope</span></div>
+    <div class="bulk-actions"><button class="quiet-button" type="button" id="bulkAssign">Assign</button><button class="quiet-button" type="button" id="bulkExport">Export</button><button class="primary-button" type="button" id="bulkApprove">Review batch</button></div>
+  </div>
+
+  <div class="recovery-strip" id="recoveryStrip" role="status" aria-live="polite" hidden><span id="recoveryCopy">Batch approved.</span><button class="text-button" id="undoAction" type="button">Undo</button><button class="icon-button" id="dismissRecovery" type="button" aria-label="Dismiss recovery message">×</button></div>
+
+  <dialog id="searchDialog" aria-labelledby="searchTitle">
+    <div class="dialog-head"><div><h2 id="searchTitle">Find the money trail</h2><p>Search exceptions, approvals, accounts, people, or event IDs.</p></div><button class="close-dialog" type="button" data-close-dialog aria-label="Close search">×</button></div>
+    <div class="dialog-body"><label for="searchInput" class="visually-hidden">Search finance operations</label><input class="search-field" id="searchInput" type="search" placeholder="Try "Kestrel", "$48,920", or "EVT-19882"" autocomplete="off"><ul class="search-results" id="searchResults"><li><button type="button" data-result-view="exceptions" data-result-detail="ex-4821"><strong>Kestrel Paper Co.</strong><br><span class="subline">EX-4821 · $48,920.00 · bank change</span></button></li><li><button type="button" data-result-view="approvals" data-result-detail="ap-7312"><strong>Arbor Hosting, Inc.</strong><br><span class="subline">AP-7312 · $24,600.00 · ready</span></button></li><li><button type="button" data-result-view="accounts" data-result-detail="operating"><strong>Operating · •••• 2847</strong><br><span class="subline">$1,284,620.17 · reconciled</span></button></li></ul></div>
+  </dialog>
+
+  <dialog id="permissionsDialog" aria-labelledby="permissionsTitle">
+    <div class="dialog-head"><div><h2 id="permissionsTitle">Authority, made explicit</h2><p>Alex Chen · Controller · US operating group</p></div><button class="close-dialog" type="button" data-close-dialog aria-label="Close permissions">×</button></div>
+    <div class="dialog-body">
+      <p class="permission-note"><strong>Separation of duties is active.</strong> You cannot approve records you submitted, bank changes without a second approver, or Payroll releases.</p>
+      <table class="permission-matrix"><caption>Permissions by account</caption><thead><tr><th>Account</th><th>View</th><th>Prepare</th><th>Approve</th></tr></thead><tbody><tr><td>Operating 2847</td><td>Yes</td><td>Yes</td><td>≤ $50k</td></tr><tr><td>Payroll 0192</td><td>Yes</td><td>Yes</td><td><span class="state-chip denied">No</span></td></tr><tr><td>Treasury 7031</td><td>Yes</td><td>Yes</td><td>Dual</td></tr></tbody></table>
+    </div>
+    <div class="dialog-actions"><button class="quiet-button" type="button" id="downloadAccessReport">Download access report</button><button class="primary-button" type="button" data-close-dialog>Done</button></div>
+  </dialog>
+
+  <dialog id="batchDialog" aria-labelledby="batchTitle">
+    <div class="dialog-head"><div><h2 id="batchTitle">Review the batch boundary</h2><p id="batchSubtitle">Only records that satisfy your authority will release.</p></div><button class="close-dialog" type="button" data-close-dialog aria-label="Close batch review">×</button></div>
+    <div class="dialog-body"><ul class="confirm-list" id="batchList"></ul><p class="permission-note" id="batchRule">Blocked records remain selected and unchanged. This action is recoverable for 30 seconds.</p></div>
+    <div class="dialog-actions"><button class="quiet-button" type="button" data-close-dialog>Cancel</button><button class="primary-button" type="button" id="confirmBatch">Approve eligible</button></div>
+  </dialog>
+
+  <script>
+    (() => {
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
+      const currencyFromText = (text) => Number((text.match(/[\d,.]+/)?.[0] || '0').replaceAll(',', ''));
+
+      const panels = $$('.ledger-pane');
+      const tabs = $$('.view-tab');
+      const workspace = $('#liveWorkspace');
+      const stateStage = $('#stateStage');
+      const detailMargin = $('#detailMargin');
+      const noticeRegion = $('#noticeRegion');
+      let currentView = 'exceptions';
+      let lastMutation = null;
+
+      const details = {
+        'ex-4821': {
+          kicker: 'Exception EX-4821 / control docket', title: 'Kestrel Paper Co.', summary: 'Payout destination changed 42 minutes before release.',
+          change: ['Previous bank', '•••• 4110', 'Proposed bank', '•••• 7823'],
+          facts: [['Amount', '$48,920.00 USD'], ['Submitted', 'Inez Park · 10:00'], ['Release path', 'ACH · Operating 2847'], ['Approvers', 'Alex Chen + T. Bell']],
+          rule: 'Your Controller role can approve up to $50,000. Bank-detail changes always require a second approver and verified callback.',
+          evidence: [['ok','Invoice INV-2026-188 attached'], ['ok','Change request signed by vendor'], ['missing','Verified callback missing'], ['missing','Second approver not yet present']],
+          approve: false, reason: 'Approval unlocks after callback evidence and T. Bell sign-off.'
+        },
+        'ex-4819': {
+          kicker: 'Exception EX-4819 / evidence variance', title: 'Northline Freight', summary: 'Receipt total is $220.40 below the proposed wire.',
+          change: ['Receipt evidence', '$12,660.00', 'Wire request', '$12,880.40'],
+          facts: [['Variance', '$220.40 USD'], ['Submitted', 'Omar Velez · 09:51'], ['Release path', 'Wire · Treasury 7031'], ['Owner', 'Omar Velez']],
+          rule: 'Treasury wires require evidence to match the release amount and a second approver. You may return this payment without changing the request.',
+          evidence: [['ok','Receipt v3 attached'], ['missing','$220.40 variance unresolved'], ['ok','T. Bell available for second approval']],
+          approve: false, reason: 'Approval unlocks when evidence matches the requested amount.'
+        },
+        'ex-4814': {
+          kicker: 'Exception EX-4814 / duplicate control', title: 'Clarity Benefits', summary: 'Amount and vendor match a payment released three business days ago.',
+          change: ['Released 15 Jul', '$86,412.00', 'Proposed 18 Jul', '$86,412.00'],
+          facts: [['Similarity', '100% amount + vendor'], ['Submitted', 'Mara Hill · 08:42'], ['Release path', 'ACH · Payroll 0192'], ['Prior payment', 'PAY-88319']],
+          rule: 'You can prepare but cannot release Payroll payments. The Payroll Admin must verify that this is a distinct obligation.',
+          evidence: [['ok','Current benefits register attached'], ['missing','Prior-period delta not explained'], ['missing','Payroll Admin review pending']],
+          approve: false, reason: 'Your role cannot approve Payroll releases.'
+        },
+        'ex-4809': {
+          kicker: 'Exception EX-4809 / identity control', title: 'Meterworks Ltd.', summary: 'Vendor tax identity expired 12 days ago.',
+          change: ['Tax evidence', 'Expired 06 Jul', 'Required state', 'Current'],
+          facts: [['Amount', '$3,204.90 USD'], ['Submitted', 'System schedule · 07:00'], ['Release path', 'Bill pay · Operating 2847'], ['Owner', 'Unassigned']],
+          rule: 'You may approve this amount after a current tax document is attached. Assignment does not change approval authority.',
+          evidence: [['ok','Invoice MTR-771 attached'], ['missing','Current W-9 missing'], ['ok','No bank-detail change']],
+          approve: false, reason: 'Approval unlocks when a current W-9 is attached.'
+        },
+        'ap-7312': {
+          kicker: 'Approval AP-7312 / release ready', title: 'Arbor Hosting, Inc.', summary: 'Annual infrastructure renewal is ready within your authority.',
+          change: ['Prior annual', '$23,280.00', 'Current annual', '$24,600.00'],
+          facts: [['Amount', '$24,600.00 USD'], ['Submitted', 'J. Lawson · 09:16'], ['Release path', 'ACH · Operating 2847'], ['Variance', '+5.67% approved']],
+          rule: 'Within your $50,000 Operating approval limit. You did not submit this payment; separation of duties is satisfied.',
+          evidence: [['ok','Invoice ARB-8004 attached'], ['ok','Budget owner approved'], ['ok','Bank details unchanged']],
+          approve: true, reason: ''
+        },
+        'ap-7308': {
+          kicker: 'Approval AP-7308 / release ready', title: 'Turner & Moss', summary: 'Legal-services payment has passed evidence checks.',
+          change: ['Matter budget', '$42,000.00', 'Payment request', '$39,800.00'],
+          facts: [['Amount', '$39,800.00 USD'], ['Submitted', 'Inez Park · 08:35'], ['Release path', 'ACH · Operating 2847'], ['Matter', 'CORP-2026-14']],
+          rule: 'Within your Operating approval authority. One Controller approval is sufficient because bank details are unchanged.',
+          evidence: [['ok','Invoice TM-0402 attached'], ['ok','Matter owner approved'], ['ok','Bank details unchanged']],
+          approve: true, reason: ''
+        },
+        'ap-7304': {
+          kicker: 'Approval AP-7304 / authority boundary', title: 'Red Mesa Facilities', summary: 'Amount exceeds your single-approver authority.',
+          change: ['Your limit', '$50,000.00', 'Payment request', '$112,400.00'],
+          facts: [['Amount', '$112,400.00 USD'], ['Submitted', 'Mara Hill · 08:17'], ['Release path', 'Wire · Treasury 7031'], ['Second approver', 'T. Bell · pending']],
+          rule: 'Treasury wires above $50,000 require two authorized approvers. Your approval may be recorded, but it cannot release the wire alone.',
+          evidence: [['ok','Contract FAC-119 attached'], ['ok','Facilities owner approved'], ['missing','T. Bell approval pending']],
+          approve: false, reason: 'Release unlocks after T. Bell records the second approval.'
+        },
+        'ap-7297': {
+          kicker: 'Approval AP-7297 / release ready', title: 'Novum Analytics', summary: 'Annual product analytics license is ready for approval.',
+          change: ['Prior annual', '$17,960.00', 'Current annual', '$18,450.44'],
+          facts: [['Amount', '$18,450.44 USD'], ['Submitted', 'Omar Velez · yesterday'], ['Release path', 'ACH · Operating 2847'], ['Renewal', '+2.73%']],
+          rule: 'Within your Operating approval authority. Cost-center owner and procurement review are complete.',
+          evidence: [['ok','Invoice NOV-612 attached'], ['ok','Procurement review complete'], ['ok','Bank details unchanged']],
+          approve: true, reason: ''
+        },
+        'ap-7289': {
+          kicker: 'Approval AP-7289 / escalated', title: 'Sunward Insurance', summary: 'Payment is above your limit and awaiting Finance Director approval.',
+          change: ['Your limit', '$50,000.00', 'Payment request', '$79,130.00'],
+          facts: [['Amount', '$79,130.00 USD'], ['Submitted', 'J. Lawson · yesterday'], ['Release path', 'ACH · Operating 2847'], ['Escalated to', 'Priya Shah']],
+          rule: 'Above your $50,000 approval authority. You can inspect or add evidence, but only a Finance Director can release it.',
+          evidence: [['ok','Policy schedule attached'], ['ok','Risk owner approved'], ['missing','Finance Director approval pending']],
+          approve: false, reason: 'Your role cannot release payments above $50,000.'
+        },
+        operating: {
+          kicker: 'Account / Operating 2847', title: '$1,284,620.17', summary: 'Pioneer Bank · reconciled through 10:42 MST.',
+          change: ['Available', '$1,284,620.17', 'After open items', '$1,145,213.97'],
+          facts: [['Pending outflow', '$90,486.20'], ['Held outflow', '$48,920.00'], ['Last statement', '18 Jul · 08:00'], ['Access', 'Controller ≤ $50k']],
+          rule: 'You can view, prepare, and approve up to $50,000. Bank-detail changes and self-submitted payments require another approver.',
+          evidence: [['ok','Bank feed current'], ['ok','Reconciliation complete'], ['missing','2 held payments require review']], approve: false, reason: 'Account actions are available from their related records.'
+        },
+        payroll: {
+          kicker: 'Account / Payroll 0192', title: '$348,112.42', summary: 'Pioneer Bank · one duplicate-suspect hold.',
+          change: ['Available', '$348,112.42', 'After payroll run', '$181,304.18'],
+          facts: [['Next payroll', '$166,808.24'], ['Held outflow', '$86,412.00'], ['Last statement', '18 Jul · 08:00'], ['Access', 'Prepare only']],
+          rule: 'Your Controller role can view and prepare Payroll activity. A Payroll Admin must approve every release.',
+          evidence: [['ok','Bank feed current'], ['ok','Reconciliation complete'], ['missing','Duplicate review pending']], approve: false, reason: 'Your role cannot approve Payroll releases.'
+        },
+        treasury: {
+          kicker: 'Account / Treasury 7031', title: '$4,902,086.30', summary: 'Harbor National · dual approval required for wires.',
+          change: ['Available', '$4,902,086.30', 'After open wires', '$4,776,805.90'],
+          facts: [['Pending wires', '$125,280.40'], ['Evidence mismatch', '$220.40'], ['Last statement', '18 Jul · 07:45'], ['Access', 'Dual approval']],
+          rule: 'You can prepare Treasury wires and act as one approver. Wire templates are restricted to Treasury Admins.',
+          evidence: [['ok','Bank feed current'], ['ok','Reconciliation complete'], ['missing','1 wire evidence mismatch']], approve: false, reason: 'Approve from a ready payment record with a second approver.'
+        }
+      };
+
+      function setView(view, focusTab = false) {
+        currentView = view;
+        tabs.forEach(tab => {
+          const active = tab.dataset.view === view;
+          tab.setAttribute('aria-selected', String(active));
+          tab.tabIndex = active ? 0 : -1;
+          if (active && focusTab) tab.focus();
+        });
+        panels.forEach(panel => { panel.hidden = panel.id !== `panel-${view}`; });
+        clearSelections();
+        if (view === 'exceptions') showDetail('ex-4821', false);
+        else if (view === 'approvals') showDetail('ap-7312', false);
+        else if (view === 'accounts') showDetail('operating', false);
+        else {
+          detailMargin.classList.remove('is-open');
+          if (!isMobile()) detailMargin.hidden = true;
+        }
+      }
+
+      function showDetail(id, openOnMobile = true) {
+        const data = details[id];
+        if (!data) return;
+        detailMargin.hidden = false;
+        $('#detailKicker').textContent = data.kicker;
+        $('#detailTitle').textContent = data.title;
+        $('#detailSummary').textContent = data.summary;
+        $('#detailChange').innerHTML = `<div><small>${data.change[0]}</small><strong>${data.change[1]}</strong></div><span class="change-arrow">→</span><div><small>${data.change[2]}</small><strong>${data.change[3]}</strong></div>`;
+        $('#detailFacts').innerHTML = data.facts.map(([term, value]) => `<div class="fact"><dt>${term}</dt><dd>${value}</dd></div>`).join('');
+        $('#permissionRule').textContent = data.rule;
+        $('#evidenceList').innerHTML = data.evidence.map(([state, copy]) => `<li class="${state === 'missing' ? 'missing' : ''}">${copy}</li>`).join('');
+        $('#approveOne').disabled = !data.approve;
+        $('#disabledReason').hidden = data.approve;
+        $('#disabledReason').textContent = data.reason;
+        $$('.ledger-pane:not([hidden]) tbody tr').forEach(row => row.classList.toggle('is-selected', row.dataset.record === id));
+        if (isMobile() && openOnMobile) {
+          detailMargin.classList.add('is-open');
+          setTimeout(() => $('#closeDetail').focus(), 20);
+        } else if (isMobile()) {
+          detailMargin.classList.remove('is-open');
+        } else {
+          detailMargin.classList.add('is-open');
+        }
+      }
+
+      function clearSelections() {
+        $$('.row-select').forEach(box => { box.checked = false; });
+        updateBulkTray();
+      }
+
+      function selectedRows() {
+        return $$('.ledger-pane:not([hidden]) tbody tr').filter(row => $('.row-select', row)?.checked);
+      }
+
+      function updateBulkTray() {
+        const rows = selectedRows();
+        $('#bulkTray').hidden = rows.length === 0;
+        $('#selectionCount').textContent = rows.length;
+        const total = rows.reduce((sum, row) => sum + currencyFromText($('.money', row)?.textContent || ''), 0);
+        $('#selectionAmount').textContent = `${total.toLocaleString('en-US', {style:'currency', currency:'USD'})} in current scope`;
+      }
+
+      function showNotice(type, title, copy, action = '') {
+        noticeRegion.innerHTML = `<div class="notice ${type}"><span class="status-symbol" aria-hidden="true">${type === 'error' ? '!' : type === 'success' ? '✓' : 'i'}</span><div><strong>${title}</strong><p>${copy}</p></div>${action}</div>`;
+      }
+
+      function clearNotice() { noticeRegion.innerHTML = ''; }
+
+      function showRecovery(copy, mutation) {
+        lastMutation = mutation;
+        $('#recoveryCopy').textContent = copy;
+        $('#recoveryStrip').hidden = false;
+      }
+
+      function addAudit(title, copy) {
+        const item = document.createElement('li');
+        item.className = 'audit-entry';
+        item.innerHTML = `<time class="audit-time">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})}</time><span class="audit-marker"></span><div class="audit-copy"><strong>${title}</strong><p>${copy}</p></div><span class="audit-id">LOCAL-${Math.floor(Math.random() * 900 + 100)}</span>`;
+        $('#auditTrail').prepend(item);
+      }
+
+      function showSystemState(state) {
+        clearNotice();
+        workspace.hidden = false;
+        stateStage.hidden = true;
+        if (state === 'live') return;
+        if (state === 'loading') {
+          workspace.hidden = true;
+          stateStage.hidden = false;
+          stateStage.innerHTML = `<div class="state-stage-inner"><div><span class="status-symbol" style="margin:auto" aria-hidden="true">↻</span><h2>Reconciling the line.</h2><p>Comparing 12 bank records against approvals and evidence. Completed account context remains unchanged.</p><div class="skeleton-ledger" aria-label="Loading finance records"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div></div></div>`;
+        } else if (state === 'error') {
+          workspace.hidden = true;
+          stateStage.hidden = false;
+          stateStage.innerHTML = `<div class="state-stage-inner"><div><span class="status-symbol" style="margin:auto;color:var(--exception)" aria-hidden="true">!</span><h2>Bank feed paused at 10:42.</h2><p>No records were changed. The last reconciled balance remains visible in the account register; releases are held until the feed is current.</p><button class="primary-button" type="button" id="retryState">Retry connection</button> <button class="quiet-button" type="button" id="viewAuditFromError">Review audit</button></div></div>`;
+          $('#retryState').addEventListener('click', () => { $('#statePicker').value = 'loading'; showSystemState('loading'); setTimeout(() => { $('#statePicker').value = 'live'; showSystemState('live'); showNotice('success', 'Feed restored.', '12 records reconciled at 10:43. No balance changes detected.'); }, 850); });
+          $('#viewAuditFromError').addEventListener('click', () => { $('#statePicker').value = 'live'; showSystemState('live'); setView('audit', true); });
+        } else if (state === 'empty') {
+          workspace.hidden = true;
+          stateStage.hidden = false;
+          const subject = currentView === 'exceptions' ? 'exceptions' : currentView === 'approvals' ? 'approvals' : 'records';
+          stateStage.innerHTML = `<div class="state-stage-inner"><div><span class="status-symbol" style="margin:auto;color:var(--success)" aria-hidden="true">✓</span><h2>No ${subject} in this scope.</h2><p>The selected account and date window are fully reconciled. Nothing was hidden or auto-released.</p><button class="quiet-button" type="button" id="openAuditEmpty">Review the audit trail</button></div></div>`;
+          $('#openAuditEmpty').addEventListener('click', () => { $('#statePicker').value = 'live'; showSystemState('live'); setView('audit', true); });
+        } else if (state === 'success') {
+          showNotice('success', 'Release recorded.', 'Three eligible payments entered the 14:00 settlement run. One constrained record remained unchanged.', '<button class="text-button" type="button" id="undoSuccess">Undo release</button>');
+          $('#undoSuccess').addEventListener('click', () => { clearNotice(); showRecovery('Release reversed. Three payments returned to Ready.', null); });
+        }
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => setView(tab.dataset.view));
+        tab.addEventListener('keydown', event => {
+          if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+          event.preventDefault();
+          let next = index;
+          if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+          if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === 'Home') next = 0;
+          if (event.key === 'End') next = tabs.length - 1;
+          setView(tabs[next].dataset.view, true);
+        });
+      });
+
+      document.addEventListener('click', event => {
+        const detailButton = event.target.closest('[data-detail]');
+        if (detailButton) showDetail(detailButton.dataset.detail);
+        const accountButton = event.target.closest('[data-open-account]');
+        if (accountButton) { setView('accounts'); showDetail(accountButton.dataset.openAccount); $('#account-' + accountButton.dataset.openAccount)?.scrollIntoView({block:'center'}); }
+        const close = event.target.closest('[data-close-dialog]');
+        if (close) close.closest('dialog')?.close();
+      });
+
+      $$('.row-select').forEach(box => box.addEventListener('change', updateBulkTray));
+      $('#closeDetail').addEventListener('click', () => detailMargin.classList.remove('is-open'));
+      $('#statePicker').addEventListener('change', event => showSystemState(event.target.value));
+
+      $('#openSearch').addEventListener('click', () => { $('#searchDialog').showModal(); setTimeout(() => $('#searchInput').focus(), 20); });
+      $('#openPermissions').addEventListener('click', () => $('#permissionsDialog').showModal());
+      $('#downloadAccessReport').addEventListener('click', () => { $('#permissionsDialog').close(); showRecovery('Access report prepared locally. No permission state changed.', null); });
+
+      $('#searchInput').addEventListener('input', event => {
+        const query = event.target.value.trim().toLowerCase();
+        $$('#searchResults li').forEach(item => { item.hidden = query && !item.textContent.toLowerCase().includes(query); });
+      });
+      $$('#searchResults button').forEach(button => button.addEventListener('click', () => {
+        $('#searchDialog').close();
+        setView(button.dataset.resultView);
+        showDetail(button.dataset.resultDetail);
+      }));
+
+      document.addEventListener('keydown', event => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); $('#searchDialog').showModal(); setTimeout(() => $('#searchInput').focus(), 20); }
+        if (event.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { event.preventDefault(); $('#searchDialog').showModal(); setTimeout(() => $('#searchInput').focus(), 20); }
+      });
+
+      $('#bulkAssign').addEventListener('click', () => {
+        const rows = selectedRows();
+        rows.forEach(row => { const ownerCell = row.children[4]; if (ownerCell) ownerCell.textContent = 'Alex Chen'; });
+        showRecovery(`${rows.length} ${rows.length === 1 ? 'record' : 'records'} assigned to Alex Chen.`, () => rows.forEach(row => { const ownerCell = row.children[4]; if (ownerCell) ownerCell.textContent = row.dataset.record === 'ex-4809' ? 'Unassigned' : 'Previous owner'; }));
+        addAudit('Records assigned', `Alex Chen accepted ownership of ${rows.length} selected record${rows.length === 1 ? '' : 's'}.`);
+        clearSelections();
+      });
+      $('#bulkExport').addEventListener('click', () => { const count = selectedRows().length; showRecovery(`${count} selected records exported with evidence and audit IDs.`, null); clearSelections(); });
+      $('#exportCurrent').addEventListener('click', () => showRecovery(`${currentView[0].toUpperCase() + currentView.slice(1)} view exported as CSV.`, null));
+
+      $('#bulkApprove').addEventListener('click', () => {
+        const rows = selectedRows();
+        $('#batchList').innerHTML = rows.map(row => {
+          const id = row.dataset.record;
+          const name = $('.row-open strong', row)?.textContent || id;
+          const allowed = details[id]?.approve;
+          return `<li><span>${name}</span><span>${allowed ? 'Eligible' : 'Remains blocked'}</span></li>`;
+        }).join('');
+        $('#confirmBatch').disabled = !rows.some(row => details[row.dataset.record]?.approve);
+        $('#batchDialog').showModal();
+      });
+
+      $('#confirmBatch').addEventListener('click', () => {
+        const rows = selectedRows();
+        const eligible = rows.filter(row => details[row.dataset.record]?.approve);
+        $('#batchDialog').close();
+        const snapshots = eligible.map(row => ({ row, wasCleared: row.classList.contains('is-cleared') }));
+        eligible.forEach(row => row.classList.add('is-cleared'));
+        showRecovery(`${eligible.length} eligible ${eligible.length === 1 ? 'payment entered' : 'payments entered'} the settlement run.`, () => snapshots.forEach(({row, wasCleared}) => row.classList.toggle('is-cleared', wasCleared)));
+        addAudit('Batch release recorded', `Alex Chen approved ${eligible.length} eligible payment${eligible.length === 1 ? '' : 's'}; constrained records remained unchanged.`);
+        clearSelections();
+      });
+
+      $('#approveOne').addEventListener('click', () => {
+        const selected = $('.ledger-pane:not([hidden]) tr.is-selected');
+        if (!selected) return;
+        selected.classList.add('is-cleared');
+        const record = selected.dataset.record;
+        showRecovery(`${details[record].title} entered the settlement run.`, () => selected.classList.remove('is-cleared'));
+        addAudit('Payment approved', `Alex Chen approved ${details[record].title}; release entered the settlement run.`);
+      });
+      $('#holdOne').addEventListener('click', () => {
+        const title = $('#detailTitle').textContent;
+        showRecovery(`${title} remains held. The owner was notified.`, null);
+        addAudit('Hold reaffirmed', `Alex Chen kept ${title} on hold pending evidence.`);
+      });
+      $('#requestEvidence').addEventListener('click', () => {
+        const title = $('#detailTitle').textContent;
+        showRecovery(`Evidence request sent to the owner of ${title}.`, null);
+        addAudit('Evidence requested', `Alex Chen requested missing evidence for ${title}.`);
+      });
+
+      $('#undoAction').addEventListener('click', () => {
+        if (typeof lastMutation === 'function') lastMutation();
+        $('#recoveryCopy').textContent = 'Action undone. Prior state restored and logged.';
+        lastMutation = null;
+        addAudit('Action recovered', 'Alex Chen restored the prior state using Undo.');
+        setTimeout(() => { $('#recoveryStrip').hidden = true; }, 1800);
+      });
+      $('#dismissRecovery').addEventListener('click', () => { $('#recoveryStrip').hidden = true; });
+
+      window.addEventListener('resize', () => {
+        if (!isMobile()) {
+          detailMargin.classList.add('is-open');
+          if (currentView !== 'audit') detailMargin.hidden = false;
+        }
+      });
+
+      if (isMobile()) detailMargin.classList.remove('is-open');
+      $('#syncStatus').setAttribute('aria-label', 'Ledger current as of 10:42:18');
+    })();
+  </script>
+</body>
+</html>
