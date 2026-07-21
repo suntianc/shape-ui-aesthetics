@@ -1,0 +1,1448 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#080808">
+  <title>Mara Vale — Cross-media artist</title>
+  <meta name="description" content="Mara Vale makes listening systems from field sound, light, clay, code, and collective movement.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23080808'/%3E%3Cpath d='M12 48 L32 16 L52 48' stroke='%23f2ecdf' stroke-width='4' fill='none'/%3E%3Ccircle cx='32' cy='52' r='4' fill='%23ff5a36'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #080808;
+      --paper: #f2ecdf;
+      --paper-dim: #a8a098;
+      --line: rgba(242, 236, 223, .18);
+      --faint: rgba(242, 236, 223, .06);
+      --accent: #ff5a36;
+      --accent-cool: #7dd8c8;
+      --success: #88d470;
+      --error: #e8c44a;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --gutter: clamp(.85rem, 4vw, 3.5rem);
+      --ease: cubic-bezier(.22, .68, .12, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      background: var(--ink);
+      color: var(--paper);
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-width: 280px;
+      overflow-x: hidden;
+      font-family: var(--sans);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    button, summary, a { touch-action: manipulation; }
+    ::selection { color: var(--ink); background: var(--accent-cool); }
+
+    :focus-visible {
+      outline: 2px solid var(--accent-cool);
+      outline-offset: 4px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 200;
+      top: .6rem;
+      left: .6rem;
+      padding: .7rem 1rem;
+      color: var(--ink);
+      background: var(--paper);
+      transform: translateY(-200%);
+    }
+    .skip-link:focus { transform: none; }
+
+    .site-header {
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 4.2rem;
+      padding: .6rem var(--gutter);
+      border-bottom: 1px solid var(--line);
+      background: rgba(8, 8, 8, .92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .artist-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .artist-mark::before {
+      content: "";
+      width: 1.1rem;
+      height: 1.1rem;
+      background: var(--accent);
+      clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    }
+
+    .site-nav {
+      display: flex;
+      gap: clamp(.6rem, 2vw, 1.6rem);
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .site-nav a { position: relative; padding-bottom: .2rem; }
+    .site-nav a::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform .2s var(--ease);
+    }
+    .site-nav a:hover::after,
+    .site-nav a:focus-visible::after { transform: scaleX(1); transform-origin: left; }
+
+    .field-stage {
+      position: relative;
+      min-height: 100svh;
+      padding-top: 4.2rem;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+    }
+
+    .field-canvas-wrap {
+      position: relative;
+      min-height: 55svh;
+      overflow: hidden;
+    }
+
+    #field-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .field-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .field-fallback svg { width: 80%; max-width: 600px; opacity: .7; }
+    .field-fallback .echo { color: var(--accent-cool); }
+
+    .field-panel {
+      position: relative;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      min-height: 42svh;
+      border-top: 1px solid var(--line);
+    }
+
+    .field-intro {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: clamp(1.5rem, 4vw, 3rem) var(--gutter) clamp(1.2rem, 3vw, 2.5rem);
+      border-right: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .9rem;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent-cool);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 2rem;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(3.2rem, 8vw, 7.5rem);
+      font-weight: 400;
+      line-height: .82;
+      letter-spacing: -.06em;
+    }
+
+    h1 em { color: var(--accent); font-style: normal; }
+
+    .artist-statement {
+      margin-top: 1.2rem;
+      font-size: clamp(.9rem, 1.3vw, 1.15rem);
+      line-height: 1.48;
+      color: var(--paper-dim);
+      max-width: 32rem;
+    }
+
+    .field-controls {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(1.5rem, 4vw, 3rem) var(--gutter) clamp(1.2rem, 3vw, 2.5rem);
+    }
+
+    .field-tools {
+      display: flex;
+      gap: .4rem;
+    }
+
+    .tool-button {
+      min-height: 2.4rem;
+      padding: .5rem .8rem;
+      border: 1px solid var(--line);
+      color: var(--paper);
+      background: rgba(8, 8, 8, .75);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: border-color .2s ease, background .2s ease;
+    }
+
+    .tool-button:hover { border-color: var(--paper); }
+    .tool-button[aria-pressed="true"] {
+      color: var(--ink);
+      background: var(--accent-cool);
+      border-color: var(--accent-cool);
+    }
+
+    .work-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+    }
+
+    .work-btn {
+      display: flex;
+      flex-direction: column;
+      padding: .7rem .6rem;
+      border: 0;
+      color: var(--paper-dim);
+      background: rgba(8, 8, 8, .88);
+      cursor: pointer;
+      text-align: left;
+      transition: color .2s ease, background .2s ease;
+    }
+
+    .work-btn small {
+      font-family: var(--mono);
+      font-size: .55rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .work-btn strong {
+      font-size: .72rem;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: .3rem;
+    }
+
+    .work-btn:hover { color: var(--paper); background: rgba(30, 28, 24, .88); }
+    .work-btn[aria-pressed="true"] {
+      color: var(--paper);
+      background: rgba(255, 90, 54, .22);
+    }
+    .work-btn[aria-pressed="true"] strong { color: var(--accent); }
+
+    .work-readout {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .field-title {
+      font-family: var(--serif);
+      font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+      font-weight: 400;
+      letter-spacing: -.03em;
+      line-height: 1.1;
+    }
+
+    .field-meta {
+      margin-top: .25rem;
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent-cool);
+    }
+
+    .field-description {
+      margin-top: .5rem;
+      font-size: .8rem;
+      line-height: 1.5;
+      color: var(--paper-dim);
+    }
+
+    .field-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      margin-top: .8rem;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .field-cta::after { content: "→"; color: var(--accent); }
+
+    .render-status {
+      position: absolute;
+      top: 5.2rem;
+      right: var(--gutter);
+      padding: .4rem .6rem;
+      border: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: .52rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--paper-dim);
+      background: rgba(8, 8, 8, .88);
+    }
+
+    [data-render="live"] .render-status { display: none; }
+
+    .archive {
+      padding: clamp(4rem, 10vw, 9rem) var(--gutter) clamp(5rem, 11vw, 11rem);
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .archive-header { margin-bottom: clamp(2rem, 5vw, 4rem); }
+
+    .archive-heading {
+      font-family: var(--serif);
+      font-size: clamp(3rem, 9vw, 8.5rem);
+      font-weight: 400;
+      line-height: .86;
+      letter-spacing: -.07em;
+    }
+
+    .archive-heading em {
+      display: block;
+      margin-left: .25em;
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .archive-subhead {
+      margin-top: 1rem;
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    .archive-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: .8rem;
+      border-bottom: 1px solid rgba(8, 8, 8, .2);
+    }
+
+    .filter-group { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+    .filter-btn {
+      min-height: 2.2rem;
+      padding: .4rem .7rem;
+      border: 1px solid rgba(8, 8, 8, .28);
+      color: var(--ink);
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      transition: background .18s ease, color .18s ease;
+    }
+
+    .filter-btn:hover { border-color: var(--ink); }
+    .filter-btn[aria-pressed="true"] {
+      color: var(--paper);
+      background: var(--ink);
+    }
+
+    .search-wrap { min-width: 14rem; }
+    .search-wrap label {
+      display: block;
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .3rem;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      min-height: 2.4rem;
+      padding: .4rem 0;
+      border: 0;
+      border-bottom: 1px solid rgba(8, 8, 8, .5);
+      color: var(--ink);
+      background: transparent;
+      font-family: var(--serif);
+      font-size: 1.2rem;
+    }
+
+    .search-wrap input::placeholder { color: #888; }
+    .result-count {
+      margin: .6rem 0 2rem;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    .work-list { border-top: 2px solid var(--ink); }
+
+    .work-entry {
+      position: relative;
+      padding: 1.4rem 0;
+      border-bottom: 1px solid rgba(8, 8, 8, .2);
+    }
+
+    .work-entry[hidden] { display: none; }
+
+    .work-entry::before {
+      content: "";
+      position: absolute;
+      left: -var(--gutter);
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--entry-accent, var(--accent));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform .4s var(--ease);
+    }
+
+    .work-entry:has(details[open])::before { transform: scaleX(1); }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: 3rem 1fr 10rem 14rem;
+      gap: clamp(.8rem, 2vw, 2rem);
+      align-items: start;
+    }
+
+    .work-num {
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: .1em;
+      color: #888;
+      padding-top: .3rem;
+    }
+
+    .work-name {
+      font-family: var(--serif);
+      font-size: clamp(1.6rem, 3vw, 3rem);
+      font-weight: 400;
+      line-height: .95;
+      letter-spacing: -.04em;
+    }
+
+    .work-meta {
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      line-height: 1.6;
+      color: #666;
+    }
+
+    .work-summary {
+      font-size: .88rem;
+      line-height: 1.55;
+      color: #444;
+    }
+
+    .work-details { grid-column: 2 / -1; margin-top: .6rem; }
+
+    .work-details summary {
+      width: max-content;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      list-style: none;
+    }
+
+    .work-details summary::-webkit-details-marker { display: none; }
+    .work-details summary::before { content: "+ "; }
+    .work-details[open] summary::before { content: "− "; }
+
+    .project-note {
+      display: grid;
+      grid-template-columns: 11rem 1fr;
+      gap: clamp(1.2rem, 4vw, 4.5rem);
+      padding: 1.2rem 0 .5rem;
+      animation: note-in .45s var(--ease) both;
+    }
+
+    @keyframes note-in {
+      from { opacity: 0; transform: translateY(.8rem); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .materials {
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      line-height: 1.8;
+      color: #666;
+    }
+
+    .materials strong { display: block; color: var(--ink); margin-bottom: .4rem; font-weight: 500; }
+
+    .project-text { max-width: 44rem; }
+    .project-text p { margin-bottom: .9rem; font-size: .95rem; line-height: 1.55; }
+    .project-text .fact {
+      font-family: var(--serif);
+      font-size: clamp(1.3rem, 2vw, 2rem);
+      line-height: 1.2;
+      letter-spacing: -.02em;
+    }
+
+    .return-link {
+      display: inline-block;
+      margin-top: 1rem;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .return-link::before { content: "↑ "; }
+
+    .empty-state { padding: 3.5rem 0; text-align: center; border-bottom: 2px solid var(--ink); }
+    .empty-state p { font-family: var(--serif); font-style: italic; font-size: clamp(1.6rem, 4vw, 3.2rem); }
+
+    .biography {
+      position: relative;
+      min-height: 90svh;
+      padding: clamp(4rem, 10vw, 9rem) var(--gutter) clamp(5rem, 11vw, 11rem);
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .bio-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      font-family: var(--serif);
+      font-size: 60vw;
+      font-weight: 400;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(242, 236, 223, .05);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .bio-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: .65fr 1.35fr;
+      gap: clamp(2rem, 7vw, 9rem);
+    }
+
+    .bio-heading {
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 6.5vw, 6.5rem);
+      font-weight: 400;
+      line-height: .9;
+      letter-spacing: -.05em;
+    }
+
+    .bio-heading em { display: block; margin-left: .8em; color: var(--accent-cool); font-weight: 400; font-style: normal; }
+
+    .bio-facts {
+      margin-top: 2rem;
+      list-style: none;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--paper-dim);
+    }
+
+    .bio-facts li {
+      padding: .6rem 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .bio-copy { align-self: end; max-width: 46rem; }
+    .bio-lead {
+      margin-bottom: 2rem;
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 3.8vw, 4rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -.04em;
+    }
+
+    .bio-body { columns: 2 14rem; column-gap: 2rem; }
+    .bio-body p {
+      margin-bottom: .9rem;
+      font-size: .9rem;
+      line-height: 1.6;
+      color: var(--paper-dim);
+    }
+
+    .contact {
+      padding: clamp(4rem, 10vw, 9rem) var(--gutter) clamp(3rem, 7vw, 7rem);
+      background: var(--accent);
+      color: var(--ink);
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: .7fr 1.3fr;
+      gap: clamp(2rem, 7vw, 9rem);
+    }
+
+    .contact-heading {
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 6.5vw, 6.5rem);
+      font-weight: 400;
+      line-height: .9;
+      letter-spacing: -.05em;
+    }
+
+    .contact-heading em { display: block; font-weight: 400; }
+
+    .contact-intro {
+      margin-top: 1.5rem;
+      font-size: .95rem;
+      line-height: 1.55;
+      max-width: 26rem;
+    }
+
+    .contact-routes { margin-top: 2.5rem; }
+    .contact-route {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: .7rem 0;
+      border-top: 1px solid rgba(8, 8, 8, .4);
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .contact-route::after { content: "↗"; }
+
+    .contact-form { align-self: end; }
+    .form-grid { display: grid; gap: 1.2rem; }
+
+    .form-field label {
+      display: block;
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: .3rem;
+    }
+
+    .form-field input,
+    .form-field textarea {
+      width: 100%;
+      padding: .6rem 0;
+      border: 0;
+      border-bottom: 1px solid rgba(8, 8, 8, .6);
+      color: var(--ink);
+      background: transparent;
+      font-family: var(--serif);
+      font-size: clamp(1rem, 1.8vw, 1.5rem);
+    }
+
+    .form-field textarea { min-height: 7rem; resize: vertical; }
+    .form-field input::placeholder,
+    .form-field textarea::placeholder { color: rgba(8, 8, 8, .5); }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .8rem;
+      margin-top: .8rem;
+    }
+
+    .form-btn {
+      min-width: 11rem;
+      min-height: 2.6rem;
+      padding: .6rem 1rem;
+      border: 1px solid var(--ink);
+      color: var(--paper);
+      background: var(--ink);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: background .18s ease, color .18s ease;
+    }
+
+    .form-btn:hover { background: var(--paper); color: var(--ink); }
+    .form-btn:disabled { opacity: .55; cursor: wait; }
+
+    .form-note { font-size: .72rem; line-height: 1.45; }
+
+    .form-status {
+      min-height: 2.5rem;
+      padding: .7rem .9rem;
+      border-left: 3px solid currentColor;
+      margin-top: .8rem;
+      font-size: .8rem;
+      line-height: 1.45;
+    }
+
+    .form-status:empty { display: none; }
+    .form-status[data-state="loading"] { color: #2a2416; background: rgba(232, 196, 74, .25); }
+    .form-status[data-state="error"] { color: #2a1a00; background: rgba(232, 196, 74, .5); }
+    .form-status[data-state="success"] { color: #1a2e0e; background: rgba(136, 212, 112, .3); }
+
+    .contact-footer {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: clamp(3rem, 7vw, 7rem);
+      padding-top: .8rem;
+      border-top: 1px solid rgba(8, 8, 8, .4);
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 900px) {
+      .field-panel { grid-template-columns: 1fr; }
+      .field-intro { border-right: 0; border-bottom: 1px solid var(--line); min-height: auto; padding-bottom: 1.5rem; }
+      .field-controls { padding-top: 1.5rem; }
+      .work-selector { grid-template-columns: repeat(6, 1fr); }
+      .field-description { display: none; }
+
+      .archive-controls { grid-template-columns: 1fr; gap: 1rem; }
+      .work-grid { grid-template-columns: 3rem 1fr; }
+      .work-meta, .work-summary { display: none; }
+      .work-details { grid-column: 2; }
+
+      .bio-grid, .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .bio-body { columns: 1; }
+    }
+
+    @media (max-width: 600px) {
+      .site-header { min-height: 3.6rem; }
+      .field-stage { padding-top: 3.6rem; }
+      .render-status { top: 4.6rem; }
+      .work-selector { grid-template-columns: repeat(3, 1fr); }
+      .field-canvas-wrap { min-height: 45svh; }
+      .field-panel { min-height: auto; }
+
+      .archive-heading { font-size: clamp(2.8rem, 13vw, 5.5rem); }
+      .project-note { grid-template-columns: 1fr; gap: 1rem; }
+      .biography, .contact { padding-right: 1rem; padding-left: 1rem; }
+      .contact-footer { flex-direction: column; }
+    }
+
+    @media (max-width: 390px) {
+      .site-nav a:not(:last-child) { display: none; }
+      .field-canvas-wrap { min-height: 40svh; }
+      h1 { font-size: clamp(2.8rem, 16vw, 4.5rem); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    @media (forced-colors: active) {
+      .field-fallback, #field-canvas { opacity: .15; }
+      .work-entry::before { display: none; }
+      .work-btn[aria-pressed="true"], .filter-btn[aria-pressed="true"] { outline: 3px solid Highlight; }
+    }
+
+    @media print {
+      .site-header, .field-tools, .render-status, .contact-form, .field-canvas-wrap { display: none; }
+      .field-stage { min-height: auto; display: block; }
+      .field-panel { min-height: auto; display: block; border: 0; }
+      .field-intro, .field-controls { padding: 1rem 0; border: 0; }
+      .archive, .biography, .contact { padding: 2rem; }
+      .work-entry[hidden] { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to portfolio</a>
+
+  <header class="site-header" aria-label="Primary">
+    <a class="artist-mark" href="#field">Mara Vale</a>
+    <nav class="site-nav" aria-label="Portfolio sections">
+      <a href="#work-index">Work</a>
+      <a href="#biography">Biography</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="field-stage" id="field" aria-labelledby="artist-name">
+      <div class="field-canvas-wrap">
+        <svg class="field-fallback" viewBox="0 0 900 500" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M50 380 C150 120, 280 420, 420 220 S720 280, 850 140"/>
+            <path class="echo" d="M50 410 C180 160, 270 380, 440 260 S700 340, 850 190"/>
+            <path d="M50 350 C200 280, 320 180, 450 300 S680 220, 850 300" opacity=".5"/>
+          </g>
+          <g fill="currentColor">
+            <circle cx="50" cy="380" r="4"/><circle cx="420" cy="220" r="4"/><circle cx="850" cy="140" r="4"/>
+            <circle cx="50" cy="350" r="4"/><circle cx="450" cy="300" r="4"/><circle cx="850" cy="300" r="4"/>
+          </g>
+        </svg>
+        <canvas id="field-canvas" role="img" aria-label="A procedural field visualization that changes based on the selected work."></canvas>
+        <p class="render-status" id="render-status" role="status">Static mode · all content accessible</p>
+      </div>
+
+      <div class="field-panel">
+        <div class="field-intro">
+          <p class="eyebrow">Cross-media artist · Rotterdam / elsewhere</p>
+          <h1 id="artist-name">Mara<br><em>Vale</em></h1>
+          <p class="artist-statement">Systems that behave like memories. Field sound, light, clay, code, and people become instruments for noticing what refuses to stay still.</p>
+        </div>
+
+        <div class="field-controls">
+          <div class="field-tools">
+            <button class="tool-button" id="pulse-btn" type="button">Send pulse</button>
+            <button class="tool-button" id="motion-btn" type="button" aria-pressed="false">Motion: live</button>
+          </div>
+
+          <nav class="work-selector" aria-label="Select a work to tune the field">
+            <button class="work-btn" type="button" data-work="tidal" aria-pressed="true"><small>01</small><strong>Tidal Grammar</strong></button>
+            <button class="work-btn" type="button" data-work="echo" aria-pressed="false"><small>02</small><strong>Weight of an Echo</strong></button>
+            <button class="work-btn" type="button" data-work="weather" aria-pressed="false"><small>03</small><strong>Borrowed Weather</strong></button>
+            <button class="work-btn" type="button" data-work="relay" aria-pressed="false"><small>04</small><strong>Soft Relay</strong></button>
+            <button class="work-btn" type="button" data-work="orchard" aria-pressed="false"><small>05</small><strong>Night Orchard</strong></button>
+            <button class="work-btn" type="button" data-work="suns" aria-pressed="false"><small>06</small><strong>312 Small Suns</strong></button>
+          </nav>
+
+          <div class="work-readout">
+            <h2 class="field-title" id="field-title">Tidal Grammar</h2>
+            <p class="field-meta" id="field-meta">Interactive light · field sound · 2026</p>
+            <p class="field-description" id="field-description">Six estuaries become one instrument. Selecting a work retunes this field to its materials and rhythm.</p>
+            <a class="field-cta" href="#project-tidal">Enter project</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="archive" id="work-index" aria-labelledby="work-heading">
+      <div class="archive-header">
+        <h2 class="archive-heading" id="work-heading">Six works,<br><em>one weather.</em></h2>
+        <p class="archive-subhead">Selected work · 2023—26</p>
+      </div>
+
+      <div class="archive-controls">
+        <div class="filter-group" aria-label="Filter by material">
+          <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">All</button>
+          <button class="filter-btn" type="button" data-filter="sound" aria-pressed="false">Sound</button>
+          <button class="filter-btn" type="button" data-filter="light" aria-pressed="false">Light</button>
+          <button class="filter-btn" type="button" data-filter="code" aria-pressed="false">Code</button>
+          <button class="filter-btn" type="button" data-filter="clay" aria-pressed="false">Clay</button>
+          <button class="filter-btn" type="button" data-filter="performance" aria-pressed="false">Performance</button>
+        </div>
+        <div class="search-wrap">
+          <label for="work-search">Find a work</label>
+          <input id="work-search" type="search" inputmode="search" autocomplete="off" placeholder="Title, material, year">
+        </div>
+      </div>
+      <p class="result-count" id="result-count" aria-live="polite">Showing all 6 works</p>
+
+      <div class="work-list">
+        <article class="work-entry" id="project-tidal" data-tags="sound light code water installation 2026" style="--entry-accent:#ff5a36">
+          <div class="work-grid">
+            <span class="work-num">01 / 06</span>
+            <h3 class="work-name">Tidal Grammar</h3>
+            <p class="work-meta">2026<br>Interactive installation</p>
+            <p class="work-summary">Six estuaries interrupt one another through light, live water data, and hand-built hydrophones.</p>
+          </div>
+          <details class="work-details">
+            <summary>Open project field note</summary>
+            <div class="project-note">
+              <p class="materials"><strong>Material score</strong>6 hydrophones<br>24-channel light<br>Browser instrument<br>9 × 14 m room</p>
+              <div class="project-text">
+                <p class="fact">The water is never used as ambience. It conducts the room.</p>
+                <p>Recordings from brackish thresholds are analyzed locally into pressure and repetition. Visitors place a hand over one of six low tables; that gesture opens its tide into the shared light score while quieting the others. No visit produces the same hierarchy twice.</p>
+                <p>My role: concept, field recording, interaction score, visual system, and fabrication direction. Built with two acoustic engineers and a six-person installation crew.</p>
+                <a class="return-link" href="#field">Return to the field instrument</a>
+              </div>
+            </div>
+          </details>
+        </article>
+
+        <article class="work-entry" id="project-echo" data-tags="sound clay porcelain sculpture field recording 2025" style="--entry-accent:#7dd8c8">
+          <div class="work-grid">
+            <span class="work-num">02 / 06</span>
+            <h3 class="work-name">The Weight of an Echo</h3>
+            <p class="work-meta">2025<br>Sound sculpture</p>
+            <p class="work-summary">Porcelain vessels translate distant maintenance sounds into small, physical tremors.</p>
+          </div>
+          <details class="work-details">
+            <summary>Open project field note</summary>
+            <div class="project-note">
+              <p class="materials"><strong>Material score</strong>11 porcelain bodies<br>Contact transducers<br>18-minute loop<br>Bench-height installation</p>
+              <div class="project-text">
+                <p class="fact">An echo gains weight when the listener must lean toward it.</p>
+                <p>Each vessel carries one infrastructural recording: a bridge joint cooling, a lift cable settling, an air vent closing after midnight. The low frequencies make glaze and table vibrate before the sound becomes recognizable.</p>
+                <p>My role: ceramic forms, recordings, score, and installation. The transducer mounts were developed with a mechanical fabricator so the porcelain remains replaceable and repairable.</p>
+                <a class="return-link" href="#field">Return to the field instrument</a>
+              </div>
+            </div>
+          </details>
+        </article>
+
+        <article class="work-entry" id="project-weather" data-tags="sound performance textile wind installation 2025" style="--entry-accent:#e8c85b">
+          <div class="work-grid">
+            <span class="work-num">03 / 06</span>
+            <h3 class="work-name">Borrowed Weather</h3>
+            <p class="work-meta">2025<br>Kinetic public work</p>
+            <p class="work-summary">A long textile instrument turns wind between two buildings into a score shared by dancers and passersby.</p>
+          </div>
+          <details class="work-details">
+            <summary>Open project field note</summary>
+            <div class="project-note">
+              <p class="materials"><strong>Material score</strong>42 m ripstop ribbon<br>Wind sensors<br>4 performers<br>Public passage</p>
+              <div class="project-text">
+                <p class="fact">The choreography waits for a force nobody commissioned.</p>
+                <p>Four performers hold, release, and reroute a continuous ribbon according to gust strength. Small e-ink markers at street level translate the same measurements into three verbs—hold, cross, release—so a passerby can read the work without joining it.</p>
+                <p>My role: concept, spatial score, textile tests, and public interaction. The performance has a windless version using walking pace rather than simulated weather.</p>
+                <a class="return-link" href="#field">Return to the field instrument</a>
+              </div>
+            </div>
+          </details>
+        </article>
+
+        <article class="work-entry" id="project-relay" data-tags="sound code performance voice browser 2024" style="--entry-accent:#a890ed">
+          <div class="work-grid">
+            <span class="work-num">04 / 06</span>
+            <h3 class="work-name">Soft Relay</h3>
+            <p class="work-meta">2024<br>Participatory browser work</p>
+            <p class="work-summary">Seventy-three voices pass one unfinished sentence across eleven time zones without a central recording.</p>
+          </div>
+          <details class="work-details">
+            <summary>Open project field note</summary>
+            <div class="project-note">
+              <p class="materials"><strong>Material score</strong>73 contributors<br>11 time zones<br>Local audio fragments<br>Open browser edition</p>
+              <div class="project-text">
+                <p class="fact">The network behaves less like an archive than a breath handed forward.</p>
+                <p>A visitor hears only the final four seconds submitted before them, then records a continuation. Their fragment is stored on-device until consent is confirmed. The public version exposes gaps and refusals as part of the score rather than smoothing them away.</p>
+                <p>My role: concept, interaction and consent model, interface, and editorial care. Code support by Ivo Chen; contributor names appear only where independently permitted.</p>
+                <a class="return-link" href="#field">Return to the field instrument</a>
+              </div>
+            </div>
+          </details>
+        </article>
+
+        <article class="work-entry" id="project-orchard" data-tags="light performance movement installation 2024" style="--entry-accent:#cfef68">
+          <div class="work-grid">
+            <span class="work-num">05 / 06</span>
+            <h3 class="work-name">Night Orchard</h3>
+            <p class="work-meta">2024<br>Light and movement</p>
+            <p class="work-summary">Twenty-one hand-held lights reveal a choreography only through the places where bodies have just departed.</p>
+          </div>
+          <details class="work-details">
+            <summary>Open project field note</summary>
+            <div class="project-note">
+              <p class="materials"><strong>Material score</strong>21 portable lights<br>7 performers<br>27-minute score<br>Outdoor / indoor variants</p>
+              <div class="project-text">
+                <p class="fact">The brightest event is an absence with a known shape.</p>
+                <p>Performers carry lights close to the ground, place them, and move on. Each lamp fades according to the duration of its last touch, leaving a legible history of decisions rather than a synchronized spectacle.</p>
+                <p>My role: light objects, temporal score, rehearsal direction, and access version. A seated arrangement preserves every spatial relationship without requiring audiences to move through darkness.</p>
+                <a class="return-link" href="#field">Return to the field instrument</a>
+              </div>
+            </div>
+          </details>
+        </article>
+
+        <article class="work-entry" id="project-suns" data-tags="clay ceramic light film stop motion 2023" style="--entry-accent:#f39b6d">
+          <div class="work-grid">
+            <span class="work-num">06 / 06</span>
+            <h3 class="work-name">312 Small Suns</h3>
+            <p class="work-meta">2023<br>Clay and stop-motion film</p>
+            <p class="work-summary">Three hundred and twelve thumb-sized clay discs record a year of studio heat, then become a six-minute film.</p>
+          </div>
+          <details class="work-details">
+            <summary>Open project field note</summary>
+            <div class="project-note">
+              <p class="materials"><strong>Material score</strong>312 clay discs<br>12 kiln firings<br>4,680 frames<br>6-minute silent film</p>
+              <div class="project-text">
+                <p class="fact">A calendar can be held in one hand, but not all at once.</p>
+                <p>One disc was pressed at the end of each studio day. Its depth records the remaining warmth of the kiln shelf. In the film, discs appear by pressure rather than date, turning a private measure of work into a slow, uneven constellation.</p>
+                <p>My role: daily clay practice, camera system, edit, and exhibition arrangement. Missing days remain empty frames; the work does not invent continuity.</p>
+                <a class="return-link" href="#field">Return to the field instrument</a>
+              </div>
+            </div>
+          </details>
+        </article>
+      </div>
+
+      <div class="empty-state" id="empty-state" hidden>
+        <p>No work occupies that weather yet.</p>
+        <button class="filter-btn" id="reset-filter" type="button">Return to all works</button>
+      </div>
+    </section>
+
+    <section class="biography" id="biography" aria-labelledby="bio-heading">
+      <span class="bio-bg" aria-hidden="true">M</span>
+      <div class="bio-grid">
+        <div class="bio-left">
+          <p class="eyebrow">Biography</p>
+          <h2 class="bio-heading" id="bio-heading">A practice of<br><em>listening back.</em></h2>
+          <ul class="bio-facts">
+            <li>Born 1989 · tidal flats and repair shops</li>
+            <li>Based in Rotterdam · working internationally</li>
+            <li>Languages: English, Dutch, Portuguese</li>
+            <li>Available for commissions, exhibitions, and lectures</li>
+          </ul>
+        </div>
+        <div class="bio-copy">
+          <p class="bio-lead">Mara Vale builds situations where matter can answer.</p>
+          <div class="bio-body">
+            <p>Her installations, performances, films, and browser works begin with close observation: pressure stored in clay, a building's night voice, weather moving between bodies, or the social life of an unfinished sentence.</p>
+            <p>Rather than represent those forces, she makes instruments that let them reorganize attention. Audiences are invited to listen, tune, carry, or interrupt—never merely to trigger an effect.</p>
+            <p>Vale's studio combines field recording, electronics, ceramic fabrication, interaction design, and long rehearsal. Each work includes a quieter parallel form for sites or bodies where motion, darkness, sound, bandwidth, or standing access is limited.</p>
+            <p>Current research follows repair as a temporal material: the trace left when an object returns to use but not to innocence. A new series for cracked loudspeakers and glazed seams is in development through 2026.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="contact" aria-labelledby="contact-heading">
+      <div class="contact-grid">
+        <div class="contact-info">
+          <p class="eyebrow">Contact · no representation layer</p>
+          <h2 class="contact-heading" id="contact-heading">Begin with<br><em>a signal.</em></h2>
+          <p class="contact-intro">For commissions, exhibitions, writing, lectures, or studio visits, write directly. A short description of the place, people, and timing is more useful than a formal brief.</p>
+          <div class="contact-routes" aria-label="Direct contact routes">
+            <a class="contact-route" href="mailto:studio@maravale.art">studio@maravale.art</a>
+            <a class="contact-route" href="mailto:studio@maravale.art?subject=Studio%20visit">Request a studio visit</a>
+            <a class="contact-route" href="mailto:studio@maravale.art?subject=CV%20request">Request CV &amp; technical rider</a>
+          </div>
+        </div>
+
+        <form class="contact-form" id="contact-form" novalidate>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="contact-name">Your name</label>
+              <input id="contact-name" name="name" autocomplete="name" placeholder="Name or organization">
+            </div>
+            <div class="form-field">
+              <label for="contact-email">Your email</label>
+              <input id="contact-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.org">
+            </div>
+            <div class="form-field">
+              <label for="contact-message">What are you imagining?</label>
+              <textarea id="contact-message" name="message" placeholder="Place, people, timing, and the first question…"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="form-btn" type="submit">Prepare email</button>
+            <p class="form-note">Nothing is uploaded. This prepares a draft in your mail app.</p>
+          </div>
+          <div class="form-status" id="form-status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+
+      <footer class="contact-footer">
+        <span>© 2026 Mara Vale · portfolio field edition 04</span>
+        <a href="#field">Return to the beginning ↑</a>
+      </footer>
+    </section>
+  </main>
+
+  <noscript>
+    <style>
+      #field-canvas, .field-tools { display: none; }
+      .render-status { display: block; }
+    </style>
+  </noscript>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const projects = {
+        tidal: {
+          title: 'Tidal Grammar',
+          meta: 'Interactive light · field sound · 2026',
+          desc: 'Six estuaries become one instrument. Selecting a work retunes this field to its materials and rhythm.',
+          aria: 'A procedural field visualization for Tidal Grammar: flowing tidal wave lines around a warm core.',
+          colors: ['#ff5a36', '#7dd8c8', '#f2ecdf'],
+          seed: 11, threads: 6, tempo: .00022, mode: 'waves'
+        },
+        echo: {
+          title: 'The Weight of an Echo',
+          meta: 'Porcelain · field sound · 2025',
+          desc: 'Eleven quiet bodies hold the tremor of distant machines. The field condenses into weighted resonances.',
+          aria: 'A procedural field visualization for The Weight of an Echo: concentric resonances gather around a cool center.',
+          colors: ['#7dd8c8', '#d5e7df', '#ff7656'],
+          seed: 29, threads: 11, tempo: .00015, mode: 'rings'
+        },
+        weather: {
+          title: 'Borrowed Weather',
+          meta: 'Textile · wind · performance · 2025',
+          desc: 'A moving line borrows the room\'s air. The field stretches into gusts, holds, and releases.',
+          aria: 'A procedural field visualization for Borrowed Weather: yellow filaments bend across the field like measured wind.',
+          colors: ['#e8c85b', '#f2ecdf', '#7dd8c8'],
+          seed: 47, threads: 9, tempo: .00035, mode: 'wind'
+        },
+        relay: {
+          title: 'Soft Relay',
+          meta: '73 voices · browser work · 2024',
+          desc: 'An unfinished sentence travels without a central archive. The field passes one pulse between many voices.',
+          aria: 'A procedural field visualization for Soft Relay: violet voice nodes pass a bright pulse along branching routes.',
+          colors: ['#a890ed', '#ff9075', '#f2ecdf'],
+          seed: 71, threads: 13, tempo: .0003, mode: 'relay'
+        },
+        orchard: {
+          title: 'Night Orchard',
+          meta: 'Portable light · movement · 2024',
+          desc: 'Light records where bodies have just been. The field leaves a fading orchard of decisions.',
+          aria: 'A procedural field visualization for Night Orchard: green lights leave fading paths around dark intervals.',
+          colors: ['#cfef68', '#6eb5a7', '#f2ecdf'],
+          seed: 89, threads: 7, tempo: .0002, mode: 'orbits'
+        },
+        suns: {
+          title: '312 Small Suns',
+          meta: 'Clay · kiln heat · film · 2023',
+          desc: 'A year of studio warmth becomes a field of uneven suns. Missing days remain visibly missing.',
+          aria: 'A procedural field visualization for 312 Small Suns: hundreds of terracotta points form an incomplete calendar spiral.',
+          colors: ['#f39b6d', '#ffd8a0', '#7dd8c8'],
+          seed: 113, threads: 12, tempo: .0001, mode: 'spiral'
+        }
+      };
+
+      const root = document.documentElement;
+      const canvas = document.getElementById('field-canvas');
+      const ctx = canvas && canvas.getContext ? canvas.getContext('2d', { alpha: true }) : null;
+      const titleEl = document.getElementById('field-title');
+      const metaEl = document.getElementById('field-meta');
+      const descEl = document.getElementById('field-description');
+      const motionBtn = document.getElementById('motion-btn');
+      const pulseBtn = document.getElementById('pulse-btn');
+      const workBtns = [...document.querySelectorAll('[data-work]')];
+      const filterBtns = [...document.querySelectorAll('[data-filter]')];
+      const searchInput = document.getElementById('work-search');
+      const resultCount = document.getElementById('result-count');
+      const workEntries = [...document.querySelectorAll('.work-entry')];
+      const emptyState = document.getElementById('empty-state');
+      const resetFilter = document.getElementById('reset-filter');
+      const contactForm = document.getElementById('contact-form');
+      const formStatus = document.getElementById('form-status');
+
+      const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const forcedStill = new URLSearchParams(location.search).has('still');
+      const constrained = Boolean(forcedStill || motionQuery.matches ||
+        (connection && connection.saveData) ||
+        (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4));
+
+      let active = 'tidal';
+      let paused = constrained || !ctx;
+      let pulse = 0;
+      let width = 0;
+      let height = 0;
+
+      root.dataset.render = paused ? 'static' : 'live';
+      motionBtn.setAttribute('aria-pressed', String(!paused));
+      motionBtn.textContent = paused ? 'Motion: still' : 'Motion: live';
+
+      function seeded(seed) {
+        let v = Math.sin(seed * 12.9898) * 43758.5453;
+        return v - Math.floor(v);
+      }
+
+      function hexToRgba(hex, alpha) {
+        const val = parseInt(hex.slice(1), 16);
+        return `rgba(${val >> 16}, ${(val >> 8) & 255}, ${val & 255}, ${alpha})`;
+      }
+
+      function resize() {
+        if (!ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+        width = Math.max(1, rect.width);
+        height = Math.max(1, rect.height);
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        draw(performance.now());
+      }
+
+      function draw(time) {
+        if (!ctx || !width || !height) return;
+        const p = projects[active];
+        const cx = width * .5;
+        const cy = height * .5;
+        const radius = Math.min(width, height) * .32;
+        const phase = paused ? 1.5 : time * p.tempo;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.4);
+        glow.addColorStop(0, hexToRgba(p.colors[0], .12 + pulse * .06));
+        glow.addColorStop(.6, hexToRgba(p.colors[1], .03));
+        glow.addColorStop(1, 'rgba(8,8,8,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.globalCompositeOperation = 'screen';
+
+        for (let t = 0; t < p.threads; t++) {
+          const offset = t / p.threads;
+          const color = p.colors[t % p.colors.length];
+          ctx.beginPath();
+
+          const steps = p.mode === 'spiral' ? 140 : 90;
+          for (let i = 0; i <= steps; i++) {
+            const u = i / steps;
+            const noise = seeded(p.seed + t * 17 + Math.floor(u * 19));
+            let angle = u * Math.PI * 2 + offset * Math.PI * 2;
+            let r = radius * (.5 + offset * .6);
+
+            if (p.mode === 'waves') {
+              r *= 1 + Math.sin(angle * 3 + phase + t) * .12;
+              angle += Math.sin(u * 6 + phase * .5) * .1;
+            } else if (p.mode === 'rings') {
+              r *= .4 + offset * .7 + Math.sin(angle * (2 + t % 3) + phase) * .05;
+            } else if (p.mode === 'wind') {
+              const wind = Math.sin(u * Math.PI * 2 + phase * .7) * .15;
+              r *= .45 + offset * .55 + wind;
+              angle += wind * .8;
+            } else if (p.mode === 'relay') {
+              r *= .35 + offset * .8 + Math.sin(angle * 4 + phase + t) * .08;
+            } else if (p.mode === 'orbits') {
+              angle += Math.sin(u * 5 + phase * .8 + t) * .12;
+              r *= .5 + offset * .5;
+            } else {
+              r *= .6 + u * .4;
+            }
+
+            const x = Math.cos(angle) * r;
+            const y = Math.sin(angle) * r * .85;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+
+          ctx.strokeStyle = hexToRgba(color, .55 + pulse * .2);
+          ctx.lineWidth = 1.5 + pulse * .5;
+          ctx.stroke();
+        }
+
+        ctx.restore();
+
+        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * .2);
+        coreGrad.addColorStop(0, hexToRgba(p.colors[0], .35 + pulse * .15));
+        coreGrad.addColorStop(1, 'rgba(8,8,8,0)');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * .2, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (pulse > 0) pulse *= .94;
+        if (pulse < .01) pulse = 0;
+
+        if (!paused) requestAnimationFrame(draw);
+      }
+
+      function selectWork(key) {
+        active = key;
+        const p = projects[key];
+        titleEl.textContent = p.title;
+        metaEl.textContent = p.meta;
+        descEl.textContent = p.desc;
+        canvas.setAttribute('aria-label', p.aria);
+
+        workBtns.forEach(btn => {
+          btn.setAttribute('aria-pressed', btn.dataset.work === key);
+        });
+
+        const entry = document.getElementById('project-' + key);
+        if (entry) {
+          entry.querySelector('.work-details').open = false;
+          entry.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        draw(performance.now());
+      }
+
+      function filterWork(tag) {
+        let count = 0;
+        workEntries.forEach(entry => {
+          const tags = entry.dataset.tags.split(' ');
+          const show = tag === 'all' || tags.includes(tag);
+          entry.hidden = !show;
+          if (show) count++;
+        });
+
+        resultCount.textContent = `Showing ${count} work${count !== 1 ? 's' : ''}`;
+        emptyState.hidden = count > 0;
+      }
+
+      function searchWork(query) {
+        const q = query.toLowerCase().trim();
+        let count = 0;
+        workEntries.forEach(entry => {
+          const text = entry.textContent.toLowerCase();
+          const show = !q || text.includes(q);
+          entry.hidden = !show;
+          if (show) count++;
+        });
+        resultCount.textContent = `Showing ${count} work${count !== 1 ? 's' : ''}`;
+        emptyState.hidden = count > 0;
+      }
+
+      workBtns.forEach(btn => {
+        btn.addEventListener('click', () => selectWork(btn.dataset.work));
+      });
+
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterBtns.forEach(b => b.setAttribute('aria-pressed', b === btn));
+          filterWork(btn.dataset.filter);
+        });
+      });
+
+      searchInput.addEventListener('input', e => searchWork(e.target.value));
+      resetFilter && resetFilter.addEventListener('click', () => {
+        filterBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.filter === 'all'));
+        filterWork('all');
+        searchInput.value = '';
+      });
+
+      motionBtn.addEventListener('click', () => {
+        paused = !paused;
+        motionBtn.setAttribute('aria-pressed', String(!paused));
+        motionBtn.textContent = paused ? 'Motion: still' : 'Motion: live';
+        root.dataset.render = paused ? 'static' : 'live';
+        if (!paused) draw(performance.now());
+      });
+
+      pulseBtn.addEventListener('click', () => {
+        pulse = 1;
+        if (!paused) draw(performance.now());
+      });
+
+      contactForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const name = document.getElementById('contact-name').value.trim();
+        const email = document.getElementById('contact-email').value.trim();
+        const message = document.getElementById('contact-message').value.trim();
+
+        formStatus.dataset.state = '';
+        formStatus.textContent = '';
+
+        if (!name) {
+          formStatus.dataset.state = 'error';
+          formStatus.textContent = 'Please enter your name.';
+          return;
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          formStatus.dataset.state = 'error';
+          formStatus.textContent = 'Please enter a valid email address.';
+          return;
+        }
+        if (!message) {
+          formStatus.dataset.state = 'error';
+          formStatus.textContent = 'Please describe what you are imagining.';
+          return;
+        }
+
+        formStatus.dataset.state = 'loading';
+        formStatus.textContent = 'Preparing your message…';
+
+        setTimeout(() => {
+          const subject = encodeURIComponent(`Portfolio inquiry from ${name}`);
+          const body = encodeURIComponent(`${message}\n\n---\nFrom: ${name} <${email}>`);
+          window.location.href = `mailto:studio@maravale.art?subject=${subject}&body=${body}`;
+
+          formStatus.dataset.state = 'success';
+          formStatus.textContent = 'Draft prepared. Your mail app should open shortly.';
+          contactForm.reset();
+
+          setTimeout(() => {
+            formStatus.dataset.state = '';
+            formStatus.textContent = '';
+          }, 5000);
+        }, 800);
+      });
+
+      if (ctx) {
+        const ro = new ResizeObserver(resize);
+        ro.observe(canvas);
+        resize();
+      } else {
+        canvas.style.display = 'none';
+      }
+    })();
+  </script>
+</body>
+</html>

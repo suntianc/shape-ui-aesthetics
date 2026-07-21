@@ -1,0 +1,16 @@
+.DS_Store
+
+# Local agent environments and research workspace data
+.agents/
+.claude/
+.scratch/
+books/
+pdfs/
+skills-lock.json
+CONTEXT.md
+AGENTS.md
+
+# Internal qualification and exploratory runs
+evaluation/shape-ui-aesthetics/*
+!evaluation/shape-ui-aesthetics/package_platform_distributions.py
+releases/shape-ui-aesthetics/1.0.0-rc.1/

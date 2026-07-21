@@ -1,0 +1,1419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Wardline — Clinical dashboard</title>
+  <style>
+    :root {
+      --host-ink: #183037;
+      --host-muted: #63777b;
+      --host-line: #d9e2e1;
+      --host-line-strong: #bdcbca;
+      --host-ground: #edf2f1;
+      --host-surface: #ffffff;
+      --host-soft: #f6f8f8;
+      --host-brand: #17666b;
+      --host-brand-soft: #dceceb;
+      --host-focus: #235ed0;
+      --host-radius: 8px;
+      --host-shadow: 0 1px 2px rgb(24 48 55 / 8%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--host-ink);
+      background: var(--host-ground);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select { font: inherit; }
+
+    button,
+    a { -webkit-tap-highlight-color: transparent; }
+
+    a { color: inherit; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 10px;
+      left: 10px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: #fff;
+      background: var(--host-focus);
+      transform: translateY(-160%);
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .host-topbar {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr) auto;
+      align-items: center;
+      min-height: 64px;
+      border-bottom: 1px solid var(--host-line-strong);
+      background: var(--host-surface);
+    }
+
+    .host-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 100%;
+      padding: 0 20px;
+      border-right: 1px solid var(--host-line);
+      font-weight: 720;
+      letter-spacing: -.02em;
+    }
+
+    .host-brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 7px;
+      color: #fff;
+      background: var(--host-brand);
+      font-size: 17px;
+      font-weight: 500;
+    }
+
+    .host-context {
+      min-width: 0;
+      padding: 0 22px;
+    }
+
+    .host-context strong,
+    .host-context span { display: block; }
+
+    .host-context strong {
+      overflow: hidden;
+      font-size: 14px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .host-context span {
+      margin-top: 1px;
+      color: var(--host-muted);
+      font-size: 12px;
+    }
+
+    .host-shift {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 20px;
+      color: var(--host-muted);
+      white-space: nowrap;
+    }
+
+    .host-avatar {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid var(--host-line-strong);
+      border-radius: 50%;
+      color: var(--host-brand);
+      background: var(--host-brand-soft);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .host-layout {
+      display: grid;
+      grid-template-columns: 248px minmax(540px, 1fr) minmax(370px, 410px);
+      min-height: calc(100vh - 64px);
+    }
+
+    .host-sidebar {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      border-right: 1px solid var(--host-line-strong);
+      background: #f8fafa;
+    }
+
+    .host-nav {
+      padding: 14px 12px 12px;
+      border-bottom: 1px solid var(--host-line);
+    }
+
+    .host-nav a {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 2px 0;
+      padding: 0 10px;
+      border-radius: 6px;
+      color: #4e6468;
+      text-decoration: none;
+    }
+
+    .host-nav a[aria-current="page"] {
+      color: var(--host-brand);
+      background: var(--host-brand-soft);
+      font-weight: 680;
+    }
+
+    .host-nav-count {
+      min-width: 25px;
+      padding: 2px 7px;
+      border: 1px solid var(--host-line-strong);
+      border-radius: 999px;
+      background: var(--host-surface);
+      color: var(--host-ink);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .host-nav a[aria-current="page"] .host-nav-count {
+      border-color: #a8c9c7;
+      color: var(--host-brand);
+    }
+
+    .patient-list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 18px 11px;
+    }
+
+    .patient-list-header h2 {
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .patient-list-header span {
+      color: var(--host-muted);
+      font-size: 12px;
+    }
+
+    .patient-list {
+      margin: 0;
+      padding: 0 10px 20px;
+      list-style: none;
+    }
+
+    .patient-list a {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 62px;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      text-decoration: none;
+    }
+
+    .patient-list a:hover { background: #f0f5f4; }
+
+    .patient-list a[aria-current="true"] {
+      border-color: var(--host-line-strong);
+      background: var(--host-surface);
+      box-shadow: var(--host-shadow);
+    }
+
+    .patient-initials {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      color: #345157;
+      background: #e6eceb;
+      font-size: 11px;
+      font-weight: 720;
+    }
+
+    .patient-name,
+    .patient-meta { display: block; }
+
+    .patient-name {
+      font-size: 13px;
+      font-weight: 670;
+    }
+
+    .patient-meta {
+      margin-top: 2px;
+      color: var(--host-muted);
+      font-size: 11px;
+    }
+
+    .patient-room {
+      color: var(--host-muted);
+      font-size: 11px;
+    }
+
+    .host-workspace {
+      min-width: 0;
+      padding: 26px 28px 40px;
+    }
+
+    .patient-titlebar {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+
+    .patient-eyebrow {
+      margin: 0 0 4px;
+      color: var(--host-muted);
+      font-size: 11px;
+      font-weight: 720;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .patient-titlebar h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 650;
+      letter-spacing: -.035em;
+      line-height: 1.1;
+    }
+
+    .patient-demographics {
+      margin: 7px 0 0;
+      color: var(--host-muted);
+      font-size: 13px;
+    }
+
+    .host-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .host-button {
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid var(--host-line-strong);
+      border-radius: 6px;
+      color: var(--host-ink);
+      background: var(--host-surface);
+      cursor: pointer;
+    }
+
+    .host-button.primary {
+      border-color: var(--host-brand);
+      color: #fff;
+      background: var(--host-brand);
+    }
+
+    .host-card {
+      margin-bottom: 16px;
+      border: 1px solid var(--host-line);
+      border-radius: var(--host-radius);
+      background: var(--host-surface);
+      box-shadow: var(--host-shadow);
+    }
+
+    .host-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      padding: 0 17px;
+      border-bottom: 1px solid var(--host-line);
+    }
+
+    .host-card-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 690;
+    }
+
+    .host-card-header span {
+      color: var(--host-muted);
+      font-size: 12px;
+    }
+
+    .vitals-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .vital {
+      min-width: 0;
+      padding: 18px 17px;
+      border-right: 1px solid var(--host-line);
+    }
+
+    .vital:last-child { border-right: 0; }
+
+    .vital-label,
+    .vital-meta { display: block; }
+
+    .vital-label {
+      margin-bottom: 8px;
+      color: var(--host-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .vital-value {
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: -.03em;
+    }
+
+    .vital-unit {
+      margin-left: 2px;
+      color: var(--host-muted);
+      font-size: 11px;
+    }
+
+    .vital-meta {
+      margin-top: 5px;
+      color: var(--host-muted);
+      font-size: 11px;
+    }
+
+    .host-two-up {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .host-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .host-table th,
+    .host-table td {
+      padding: 13px 17px;
+      border-bottom: 1px solid var(--host-line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .host-table tr:last-child th,
+    .host-table tr:last-child td { border-bottom: 0; }
+
+    .host-table th {
+      width: 38%;
+      color: var(--host-muted);
+      font-size: 11px;
+      font-weight: 540;
+    }
+
+    .host-table td {
+      font-size: 12px;
+      font-weight: 590;
+    }
+
+    .host-note-list {
+      margin: 0;
+      padding: 4px 17px 8px;
+      list-style: none;
+    }
+
+    .host-note-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--host-line);
+    }
+
+    .host-note-list li:last-child { border-bottom: 0; }
+
+    .host-note-list time,
+    .host-note-list span { display: block; }
+
+    .host-note-list time {
+      margin-bottom: 3px;
+      color: var(--host-muted);
+      font-size: 11px;
+    }
+
+    .host-note-list span { font-size: 12px; }
+
+    .host-footer-note {
+      color: var(--host-muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .host-topbar a:focus-visible,
+    .host-sidebar a:focus-visible,
+    .host-workspace button:focus-visible {
+      outline: 3px solid var(--host-focus);
+      outline-offset: 2px;
+    }
+
+    /* ================================================================
+       CHANGE BOUNDARY: ALERT REGION ONLY
+       Refined hierarchy, density, and feedback
+       ================================================================ */
+    #alert-region {
+      --alert-ink: #162e34;
+      --alert-deep: #0f272d;
+      --alert-ground: #f7f9f8;
+      --alert-surface: #ffffff;
+      --alert-line: #c4d1ce;
+      --alert-line-strong: #8fa6a2;
+      --alert-amber: #c9920e;
+      --alert-amber-soft: #f6e9c3;
+      --alert-amber-deep: #7a5a0a;
+      --alert-carmine: #a62828;
+      --alert-carmine-soft: #f5dada;
+      --alert-pending: #b8c4c2;
+      position: relative;
+      min-width: 0;
+      border-left: 1px solid var(--host-line-strong);
+      background: var(--alert-ground);
+      color: var(--alert-ink);
+    }
+
+    #alert-region .alert-sticky {
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-color: var(--alert-line-strong) transparent;
+    }
+
+    #alert-region .alert-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--alert-line);
+      background: rgb(247 249 248 / 97%);
+      backdrop-filter: blur(12px);
+    }
+
+    #alert-region .alert-kicker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: #546668;
+      font-size: 10px;
+      font-weight: 760;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    #alert-region .alert-shift-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    #alert-region .alert-shift-status::before {
+      width: 6px;
+      height: 6px;
+      border: 1.5px solid var(--alert-deep);
+      border-radius: 50%;
+      content: "";
+    }
+
+    #alert-region .alert-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    #alert-region h2 {
+      margin: 0;
+      font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+      font-size: 26px;
+      font-weight: 520;
+      letter-spacing: -.025em;
+      line-height: 1;
+    }
+
+    #alert-region .alert-total {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      color: var(--alert-deep);
+      white-space: nowrap;
+    }
+
+    #alert-region .alert-total strong {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 22px;
+      font-weight: 680;
+      line-height: 1;
+      letter-spacing: -.02em;
+    }
+
+    #alert-region .alert-total span {
+      color: #566b6e;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    #alert-region .alert-counts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      margin: 12px 0 0;
+      color: #4e6265;
+      font-size: 11px;
+    }
+
+    #alert-region .alert-counts span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #alert-region .alert-counts span::before {
+      width: 5px;
+      height: 5px;
+      border: 1px solid currentColor;
+      content: "";
+    }
+
+    #alert-region .alert-counts span:first-child::before {
+      border-color: var(--alert-amber);
+      background: var(--alert-amber);
+    }
+
+    #alert-region .alert-counts span:nth-child(2)::before {
+      border-style: dashed;
+      transform: none;
+    }
+
+    #alert-region .alert-counts span:nth-child(3)::before {
+      border-radius: 50%;
+      transform: none;
+    }
+
+    #alert-region .alert-queue-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0;
+      padding: 12px 20px 10px;
+      color: #566b6e;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    #alert-region .alert-queue-label span:last-child {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 500;
+      letter-spacing: .02em;
+    }
+
+    #alert-region .alert-list {
+      position: relative;
+      margin: 0;
+      padding: 0 16px 16px 24px;
+      list-style: none;
+    }
+
+    #alert-region .alert-list::before {
+      position: absolute;
+      top: 10px;
+      bottom: 28px;
+      left: 26px;
+      width: 1px;
+      background: var(--alert-line-strong);
+      content: "";
+    }
+
+    #alert-region .alert-item {
+      position: relative;
+      margin: 0 0 10px;
+    }
+
+    #alert-region .alert-item::before {
+      position: absolute;
+      z-index: 1;
+      top: 20px;
+      left: -18px;
+      display: grid;
+      width: 13px;
+      height: 13px;
+      place-items: center;
+      border: 2px solid var(--alert-ground);
+      border-radius: 50%;
+      background: var(--alert-deep);
+      color: #fff;
+      content: attr(data-order);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 6px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+
+    #alert-region .alert-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--alert-line);
+      border-left: 4px solid var(--alert-line-strong);
+      border-radius: 2px 6px 6px 2px;
+      background: var(--alert-surface);
+      box-shadow: 0 1px 4px rgb(22 46 52 / 5%);
+    }
+
+    #alert-region .alert-card[data-severity="critical"] {
+      border-color: var(--alert-carmine);
+      border-left-color: var(--alert-amber);
+      background: var(--alert-deep);
+      color: #e8f0ee;
+      box-shadow: 0 3px 12px rgb(15 39 45 / 15%);
+    }
+
+    #alert-region .alert-card[data-severity="high"]:not([data-state="acknowledged"]) {
+      border-left-color: var(--alert-amber);
+    }
+
+    #alert-region .alert-card[data-state="missing"] {
+      border-left-style: dashed;
+      border-left-color: var(--alert-line-strong);
+      background:
+        repeating-linear-gradient(135deg, rgb(22 46 52 / 3%) 0 3px, transparent 3px 9px),
+        var(--alert-ground);
+    }
+
+    #alert-region .alert-card[data-state="acknowledged"] {
+      border-color: #b0c0bc;
+      border-left-color: var(--alert-pending);
+      border-left-style: double;
+      border-left-width: 3px;
+      color: #4a5c5a;
+      background:
+        repeating-linear-gradient(135deg, rgb(22 46 52 / 2%) 0 2px, transparent 2px 8px),
+        var(--alert-ground);
+      box-shadow: none;
+    }
+
+    #alert-region .alert-card-main {
+      padding: 12px 14px 10px;
+    }
+
+    #alert-region .alert-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 7px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    #alert-region .alert-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #alert-region .state-glyph {
+      display: inline-grid;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 3px;
+      place-items: center;
+      border: 1px solid currentColor;
+      border-radius: 3px;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    #alert-region .alert-card[data-severity="critical"] .state-glyph {
+      border-color: var(--alert-amber-soft);
+      color: var(--alert-amber-soft);
+    }
+
+    #alert-region .alert-card[data-state="missing"] .state-glyph {
+      border-style: dashed;
+      font-size: 12px;
+    }
+
+    #alert-region .alert-card[data-state="acknowledged"] .state-glyph {
+      border-radius: 50%;
+      border-style: solid;
+    }
+
+    #alert-region .alert-elapsed {
+      opacity: .75;
+      white-space: nowrap;
+      letter-spacing: .03em;
+    }
+
+    #alert-region .alert-patient {
+      margin: 0 0 3px;
+      font-size: 11px;
+      font-weight: 680;
+      letter-spacing: .01em;
+    }
+
+    #alert-region .alert-patient span {
+      margin-left: 4px;
+      color: inherit;
+      opacity: .6;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    #alert-region .alert-card h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 720;
+      letter-spacing: -.01em;
+      line-height: 1.3;
+    }
+
+    #alert-region .alert-reading {
+      display: flex;
+      gap: 6px;
+      align-items: baseline;
+      margin: 7px 0 0;
+    }
+
+    #alert-region .alert-reading strong {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 20px;
+      font-weight: 650;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    #alert-region .alert-reading span {
+      font-size: 10px;
+      opacity: .7;
+    }
+
+    #alert-region .alert-card[data-state="missing"] .alert-reading strong {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 720;
+      letter-spacing: 0;
+    }
+
+    #alert-region .alert-support {
+      margin: 6px 0 0;
+      font-size: 11px;
+      line-height: 1.4;
+      opacity: .75;
+    }
+
+    #alert-region details {
+      border-top: 1px solid rgb(133 152 148 / 35%);
+    }
+
+    #alert-region summary {
+      display: flex;
+      min-height: 40px;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      cursor: pointer;
+      color: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      list-style: none;
+      opacity: .85;
+    }
+
+    #alert-region summary::-webkit-details-marker { display: none; }
+
+    #alert-region summary::before {
+      content: "+";
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+    }
+
+    #alert-region details[open] summary::before { content: "−"; }
+
+    #alert-region .alert-context {
+      margin: -2px 14px 10px 34px;
+      font-size: 11px;
+      line-height: 1.45;
+      opacity: .8;
+    }
+
+    #alert-region .alert-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, .7fr);
+      gap: 6px;
+      padding: 8px 10px 10px;
+      border-top: 1px solid rgb(133 152 148 / 35%);
+    }
+
+    #alert-region .alert-action {
+      display: inline-flex;
+      min-width: 0;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      border: 1px solid var(--alert-line-strong);
+      border-radius: 4px;
+      color: var(--alert-ink);
+      background: transparent;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    #alert-region .alert-action.primary {
+      border-color: var(--alert-deep);
+      color: #fff;
+      background: var(--alert-deep);
+    }
+
+    #alert-region .alert-card[data-severity="critical"] .alert-action {
+      border-color: rgb(255 255 255 / 35%);
+      color: var(--alert-surface);
+    }
+
+    #alert-region .alert-card[data-severity="critical"] .alert-action.primary {
+      border-color: var(--alert-amber);
+      color: var(--alert-amber-deep);
+      background: var(--alert-amber-soft);
+    }
+
+    #alert-region .alert-action[disabled] {
+      border-style: dashed;
+      border-color: var(--alert-pending);
+      color: var(--alert-pending);
+      background: transparent;
+      cursor: default;
+    }
+
+    #alert-region .alert-action:hover:not([disabled]) {
+      box-shadow: inset 0 0 0 1px currentColor;
+    }
+
+    #alert-region .alert-action:active:not([disabled]) {
+      transform: translateY(1px);
+    }
+
+    #alert-region .alert-action:focus-visible,
+    #alert-region summary:focus-visible {
+      outline: 3px solid var(--host-focus);
+      outline-offset: 2px;
+    }
+
+    #alert-region .alert-state-key {
+      margin: 0 16px 16px 40px;
+      padding: 12px 14px;
+      border: 1px solid var(--alert-line);
+      border-radius: 5px;
+      background: var(--alert-ground);
+    }
+
+    #alert-region .alert-state-key h3 {
+      margin: 0 0 6px;
+      color: #4a5f62;
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    #alert-region .alert-state-key p {
+      margin: 0;
+      color: #546668;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    #alert-region .alert-state-key strong { color: var(--alert-ink); }
+
+    #alert-region .alert-live {
+      position: sticky;
+      z-index: 3;
+      bottom: 10px;
+      display: none;
+      margin: 0 16px 12px 40px;
+      padding: 10px 14px;
+      border: 1px solid var(--alert-deep);
+      border-radius: 5px;
+      color: #fff;
+      background: var(--alert-deep);
+      box-shadow: 0 4px 14px rgb(15 39 45 / 18%);
+      font-size: 11px;
+    }
+
+    #alert-region .alert-live.is-visible { display: block; }
+
+    @media (max-width: 1180px) {
+      .host-layout { grid-template-columns: 220px minmax(480px, 1fr) 370px; }
+      .host-topbar { grid-template-columns: 220px minmax(0, 1fr) auto; }
+      .host-workspace { padding-inline: 20px; }
+      .vitals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .vital:nth-child(2) { border-right: 0; }
+      .vital:nth-child(-n + 2) { border-bottom: 1px solid var(--host-line); }
+    }
+
+    @media (max-width: 980px) {
+      .host-topbar { grid-template-columns: 200px minmax(0, 1fr) auto; }
+      .host-brand { padding-inline: 14px; }
+      .host-layout { grid-template-columns: 200px minmax(0, 1fr); }
+      #alert-region { grid-column: 2; border-top: 1px solid var(--host-line-strong); }
+      #alert-region .alert-sticky { position: relative; max-height: none; overflow: visible; }
+      #alert-region .alert-header { position: relative; }
+      #alert-region .alert-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      #alert-region .alert-list::before { display: none; }
+      #alert-region .alert-item { margin-bottom: 0; }
+    }
+
+    @media (max-width: 720px) {
+      .host-topbar { grid-template-columns: minmax(0, 1fr) auto; }
+      .host-brand { border-right: 0; }
+      .host-context { display: none; }
+      .host-shift { padding-right: 14px; }
+      .host-shift > span { display: none; }
+      .host-layout { display: block; }
+      .host-sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--host-line-strong);
+      }
+      .host-nav {
+        display: flex;
+        gap: 5px;
+        overflow-x: auto;
+        padding: 8px 10px;
+      }
+      .host-nav a {
+        flex: 0 0 auto;
+        gap: 8px;
+        margin: 0;
+      }
+      .patient-list-header,
+      .patient-list { display: none; }
+      #patient-list:target {
+        display: flex;
+        padding: 14px 14px 10px;
+      }
+      #patient-list:target + .patient-list {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 0 14px 16px;
+        scroll-snap-type: x proximity;
+      }
+      #patient-list:target + .patient-list li {
+        flex: 0 0 205px;
+        scroll-snap-align: start;
+      }
+      .host-workspace { padding: 20px 14px 28px; }
+      .patient-titlebar { display: block; }
+      .host-actions { justify-content: flex-start; margin-top: 15px; }
+      .host-two-up { grid-template-columns: 1fr; }
+      #alert-region { border-left: 0; }
+      #alert-region .alert-list { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 430px) {
+      .host-brand-mark { width: 28px; height: 28px; }
+      .host-brand { font-size: 13px; }
+      .host-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .host-button { width: 100%; }
+      .vitals-grid { grid-template-columns: 1fr 1fr; }
+      .vital { padding-inline: 13px; }
+      #alert-region .alert-header { padding-inline: 16px; }
+      #alert-region .alert-queue-label { padding-inline: 16px; }
+      #alert-region .alert-list { padding-left: 16px; }
+      #alert-region .alert-state-key,
+      #alert-region .alert-live { margin-left: 36px; }
+      #alert-region .alert-counts { max-width: 260px; }
+    }
+
+    @media (prefers-contrast: more) {
+      #alert-region { --alert-line: #536967; --alert-line-strong: #304b4c; }
+      #alert-region .alert-card { box-shadow: none; }
+      #alert-region .alert-action { border-width: 2px; }
+    }
+
+    @media (forced-colors: active) {
+      #alert-region,
+      #alert-region .alert-card,
+      #alert-region .alert-header,
+      #alert-region .alert-state-key { background: Canvas; color: CanvasText; }
+      #alert-region .alert-card { border: 2px solid CanvasText; }
+      #alert-region .alert-card[data-state="missing"] { border-style: dashed; }
+      #alert-region .alert-card[data-state="acknowledged"] { border-style: double; }
+      #alert-region .alert-action { forced-color-adjust: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #alert-region *,
+      #alert-region *::before,
+      #alert-region *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+      #alert-region .alert-action:active:not([disabled]) { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#alert-region">Skip to alert queue</a>
+
+  <header class="host-topbar">
+    <div class="host-brand">
+      <span class="host-brand-mark" aria-hidden="true">+</span>
+      <span>Wardline</span>
+    </div>
+    <div class="host-context">
+      <strong>North Pavilion · 4B Medical</strong>
+      <span>Sunday, July 20 · Day shift</span>
+    </div>
+    <div class="host-shift">
+      <span>D. Chen, RN</span>
+      <span class="host-avatar" aria-hidden="true">DC</span>
+    </div>
+  </header>
+
+  <div class="host-layout">
+    <aside class="host-sidebar" aria-label="Clinical navigation and patients">
+      <nav class="host-nav" aria-label="Primary">
+        <a href="#patient-summary" aria-current="page"><span>Overview</span></a>
+        <a href="#patient-list"><span>Patients</span><span class="host-nav-count">8</span></a>
+        <a href="#alert-region"><span>Alert queue</span><span class="host-nav-count">6</span></a>
+        <a href="#care-plan"><span>Tasks</span><span class="host-nav-count">3</span></a>
+      </nav>
+
+      <div class="patient-list-header" id="patient-list">
+        <h2>Patients</h2>
+        <span>8 assigned</span>
+      </div>
+      <ul class="patient-list" aria-label="Assigned patients">
+        <li><a href="#patient-summary" aria-current="true"><span class="patient-initials">ER</span><span><span class="patient-name">Elena Ruiz</span><span class="patient-meta">MRN 041 872</span></span><span class="patient-room">4B-12</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">ML</span><span><span class="patient-name">Marcus Lee</span><span class="patient-meta">MRN 104 336</span></span><span class="patient-room">4B-14</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">AN</span><span><span class="patient-name">Amina Noor</span><span class="patient-meta">MRN 008 591</span></span><span class="patient-room">4B-15</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">JB</span><span><span class="patient-name">Jon Bell</span><span class="patient-meta">MRN 073 446</span></span><span class="patient-room">4B-16</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">SM</span><span><span class="patient-name">Sofia Marin</span><span class="patient-meta">MRN 112 709</span></span><span class="patient-room">4B-18</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">TW</span><span><span class="patient-name">Theo Wright</span><span class="patient-meta">MRN 092 185</span></span><span class="patient-room">4B-19</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">LP</span><span><span class="patient-name">Lina Patel</span><span class="patient-meta">MRN 057 024</span></span><span class="patient-room">4B-21</span></a></li>
+        <li><a href="#patient-summary"><span class="patient-initials">GH</span><span><span class="patient-name">George Hale</span><span class="patient-meta">MRN 126 813</span></span><span class="patient-room">4B-22</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="host-workspace" id="patient-summary">
+      <div class="patient-titlebar">
+        <div>
+          <p class="patient-eyebrow">4B-12 · Selected patient</p>
+          <h1>Elena Ruiz</h1>
+          <p class="patient-demographics">67 years · she/her · MRN 041 872 · admitted Jul 18</p>
+        </div>
+        <div class="host-actions" aria-label="Patient actions">
+          <button class="host-button" type="button">Message care team</button>
+          <button class="host-button primary" type="button">Add clinical note</button>
+        </div>
+      </div>
+
+      <section class="host-card" aria-labelledby="vitals-title">
+        <div class="host-card-header">
+          <h2 id="vitals-title">Latest observations</h2>
+          <span>Updated 10:42</span>
+        </div>
+        <div class="vitals-grid">
+          <div class="vital"><span class="vital-label">Heart rate</span><span class="vital-value">104</span><span class="vital-unit">bpm</span><span class="vital-meta">10:42 · bedside monitor</span></div>
+          <div class="vital"><span class="vital-label">Blood pressure</span><span class="vital-value">194/96</span><span class="vital-unit">mmHg</span><span class="vital-meta">10:40 · automatic cuff</span></div>
+          <div class="vital"><span class="vital-label">Oxygen saturation</span><span class="vital-value">82</span><span class="vital-unit">%</span><span class="vital-meta">10:42 · continuous</span></div>
+          <div class="vital"><span class="vital-label">Temperature</span><span class="vital-value">37.6</span><span class="vital-unit">°C</span><span class="vital-meta">09:58 · oral</span></div>
+        </div>
+      </section>
+
+      <div class="host-two-up">
+        <section class="host-card" id="care-plan" aria-labelledby="care-plan-title">
+          <div class="host-card-header"><h2 id="care-plan-title">Care plan</h2><span>3 tasks</span></div>
+          <table class="host-table">
+            <tbody>
+              <tr><th scope="row">Respiratory check</th><td>Due now</td></tr>
+              <tr><th scope="row">Mobility assessment</th><td>12:00</td></tr>
+              <tr><th scope="row">Fluid balance</th><td>14:00</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="host-card" aria-labelledby="medications-title">
+          <div class="host-card-header"><h2 id="medications-title">Medication schedule</h2><span>Today</span></div>
+          <table class="host-table">
+            <tbody>
+              <tr><th scope="row">Insulin lispro</th><td>10:15 · overdue</td></tr>
+              <tr><th scope="row">Furosemide</th><td>12:00 · scheduled</td></tr>
+              <tr><th scope="row">Acetaminophen</th><td>PRN · available</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <section class="host-card" aria-labelledby="notes-title">
+        <div class="host-card-header"><h2 id="notes-title">Recent notes</h2><span>Last 4 hours</span></div>
+        <ul class="host-note-list">
+          <li><time datetime="2026-07-20T10:21">10:21 · D. Chen, RN</time><span>Patient resting upright; observations repeated after repositioning.</span></li>
+          <li><time datetime="2026-07-20T08:46">08:46 · A. Park, MD</time><span>Morning review completed. Continue current observation plan.</span></li>
+          <li><time datetime="2026-07-20T07:12">07:12 · N. Shah, RN</time><span>Day-shift handoff completed at bedside.</span></li>
+        </ul>
+      </section>
+
+      <p class="host-footer-note">Demonstration interface · fictional patient data</p>
+    </main>
+
+    <aside id="alert-region" aria-labelledby="alert-title" data-total-alerts="6">
+      <div class="alert-sticky">
+        <header class="alert-header">
+          <div class="alert-kicker">
+            <span>Attention queue</span>
+            <span class="alert-shift-status">Live · Ward 4B</span>
+          </div>
+          <div class="alert-title-row">
+            <h2 id="alert-title">Clinical alerts</h2>
+            <div class="alert-total" aria-label="6 alerts in queue"><strong data-count-total>6</strong><span>in queue</span></div>
+          </div>
+          <p class="alert-counts" aria-live="polite">
+            <span><strong data-count-needs-ack>4</strong> need acknowledgement</span>
+            <span><strong data-count-missing>1</strong> missing data</span>
+            <span><strong data-count-acknowledged>1</strong> acknowledged</span>
+          </p>
+        </header>
+
+        <p class="alert-queue-label"><span>Consequence first</span><span>10:43 local</span></p>
+
+        <ol class="alert-list" aria-label="Clinical alerts ordered by consequence and time">
+          <li class="alert-item" data-order="1">
+            <article class="alert-card" data-alert-id="A-142" data-state="needs-ack" data-severity="critical" aria-labelledby="alert-a142-title">
+              <div class="alert-card-main">
+                <div class="alert-meta"><span class="alert-status"><span class="state-glyph" aria-hidden="true">!!</span><span data-state-label>Critical · unacknowledged</span></span><time class="alert-elapsed" datetime="2026-07-20T10:42">1 min</time></div>
+                <p class="alert-patient">Elena Ruiz <span>4B-12 · A-142</span></p>
+                <h3 id="alert-a142-title">Oxygen saturation below observation limit</h3>
+                <p class="alert-reading"><strong>82%</strong><span>current · limit 88%</span></p>
+                <p class="alert-support">Continuous source · previous reading 91% at 10:39</p>
+              </div>
+              <details>
+                <summary>Show clinical context</summary>
+                <p class="alert-context">Signal is continuous. The reading crossed the configured observation limit at 10:42. Confirm source and follow the active care protocol.</p>
+              </details>
+              <div class="alert-actions">
+                <button class="alert-action primary" type="button" data-acknowledge>Acknowledge alert</button>
+                <a class="alert-action" href="#vitals-title">Open observations</a>
+              </div>
+            </article>
+          </li>
+
+          <li class="alert-item" data-order="2">
+            <article class="alert-card" data-alert-id="A-141" data-state="needs-ack" data-severity="high" aria-labelledby="alert-a141-title">
+              <div class="alert-card-main">
+                <div class="alert-meta"><span class="alert-status"><span class="state-glyph" aria-hidden="true">!</span><span data-state-label>High · unacknowledged</span></span><time class="alert-elapsed" datetime="2026-07-20T10:40">3 min</time></div>
+                <p class="alert-patient">Elena Ruiz <span>4B-12 · A-141</span></p>
+                <h3 id="alert-a141-title">Systolic pressure above observation limit</h3>
+                <p class="alert-reading"><strong>194</strong><span>mmHg · limit 180</span></p>
+                <p class="alert-support">Automatic cuff · repeat reading confirmed at 10:40</p>
+              </div>
+              <details>
+                <summary>Show clinical context</summary>
+                <p class="alert-context">Two automatic cuff readings exceeded the configured observation limit. The most recent value is shown; no clinical interpretation has been added.</p>
+              </details>
+              <div class="alert-actions">
+                <button class="alert-action primary" type="button" data-acknowledge>Acknowledge alert</button>
+                <a class="alert-action" href="#vitals-title">Open observations</a>
+              </div>
+            </article>
+          </li>
+
+          <li class="alert-item" data-order="3">
+            <article class="alert-card" data-alert-id="A-139" data-state="needs-ack" data-severity="high" aria-labelledby="alert-a139-title">
+              <div class="alert-card-main">
+                <div class="alert-meta"><span class="alert-status"><span class="state-glyph" aria-hidden="true">!</span><span data-state-label>High · unacknowledged</span></span><time class="alert-elapsed" datetime="2026-07-20T10:33">10 min</time></div>
+                <p class="alert-patient">Elena Ruiz <span>4B-12 · A-139</span></p>
+                <h3 id="alert-a139-title">Medication administration overdue</h3>
+                <p class="alert-reading"><strong>18 min</strong><span>past scheduled time</span></p>
+                <p class="alert-support">Insulin lispro · scheduled 10:15 · no administration recorded</p>
+              </div>
+              <details>
+                <summary>Show clinical context</summary>
+                <p class="alert-context">The medication record contains no administration or hold entry after the scheduled time. Acknowledgement records receipt and does not alter the medication record.</p>
+              </details>
+              <div class="alert-actions">
+                <button class="alert-action primary" type="button" data-acknowledge>Acknowledge alert</button>
+                <a class="alert-action" href="#medications-title">Open schedule</a>
+              </div>
+            </article>
+          </li>
+
+          <li class="alert-item" data-order="4">
+            <article class="alert-card" data-alert-id="A-136" data-state="missing" data-severity="source" aria-labelledby="alert-a136-title">
+              <div class="alert-card-main">
+                <div class="alert-meta"><span class="alert-status"><span class="state-glyph" aria-hidden="true">∅</span><span data-state-label>Missing data · source unavailable</span></span><time class="alert-elapsed" datetime="2026-07-20T10:31">12 min</time></div>
+                <p class="alert-patient">Marcus Lee <span>4B-14 · A-136</span></p>
+                <h3 id="alert-a136-title">Telemetry signal unavailable</h3>
+                <p class="alert-reading"><strong>No current value</strong></p>
+                <p class="alert-support">Last valid sample 10:31 · source connection not reporting</p>
+              </div>
+              <details>
+                <summary>Show source context</summary>
+                <p class="alert-context">No current telemetry value is available. The interface preserves the last-valid timestamp and does not substitute or infer a reading.</p>
+              </details>
+              <div class="alert-actions">
+                <button class="alert-action primary" type="button" data-inspect-source>Inspect source</button>
+                <a class="alert-action" href="#patient-list">Open patient</a>
+              </div>
+            </article>
+          </li>
+
+          <li class="alert-item" data-order="5">
+            <article class="alert-card" data-alert-id="A-132" data-state="needs-ack" data-severity="medium" aria-labelledby="alert-a132-title">
+              <div class="alert-card-main">
+                <div class="alert-meta"><span class="alert-status"><span class="state-glyph" aria-hidden="true">!</span><span data-state-label>Moderate · unacknowledged</span></span><time class="alert-elapsed" datetime="2026-07-20T10:18">25 min</time></div>
+                <p class="alert-patient">Amina Noor <span>4B-15 · A-132</span></p>
+                <h3 id="alert-a132-title">Fluid observation below configured limit</h3>
+                <p class="alert-reading"><strong>20 mL</strong><span>hourly record · limit 30 mL</span></p>
+                <p class="alert-support">Manual record · entered by N. Shah, RN at 10:18</p>
+              </div>
+              <details>
+                <summary>Show clinical context</summary>
+                <p class="alert-context">The recorded hourly value crossed the configured observation limit. The original value, unit, author, and entry time remain visible.</p>
+              </details>
+              <div class="alert-actions">
+                <button class="alert-action primary" type="button" data-acknowledge>Acknowledge alert</button>
+                <a class="alert-action" href="#care-plan">Open care plan</a>
+              </div>
+            </article>
+          </li>
+
+          <li class="alert-item" data-order="6">
+            <article class="alert-card" data-alert-id="A-127" data-state="acknowledged" data-severity="high" aria-labelledby="alert-a127-title">
+              <div class="alert-card-main">
+                <div class="alert-meta"><span class="alert-status"><span class="state-glyph" aria-hidden="true">✓</span><span data-state-label>Acknowledged · high</span></span><time class="alert-elapsed" datetime="2026-07-20T10:24">19 min</time></div>
+                <p class="alert-patient">Sofia Marin <span>4B-18 · A-127</span></p>
+                <h3 id="alert-a127-title">Potassium result above observation limit</h3>
+                <p class="alert-reading"><strong>5.7</strong><span>mmol/L · limit 5.5</span></p>
+                <p class="alert-support" data-ack-note>Acknowledged by D. Chen, RN at 10:24 · condition remains in queue</p>
+              </div>
+              <details>
+                <summary>Show clinical context</summary>
+                <p class="alert-context">Acknowledgement records that the alert was received. It does not mark the result as resolved or remove the alert from the queue.</p>
+              </details>
+              <div class="alert-actions">
+                <button class="alert-action primary" type="button" data-acknowledge disabled>Acknowledged</button>
+                <a class="alert-action" href="#patient-list">Open patient</a>
+              </div>
+            </article>
+          </li>
+        </ol>
+
+        <section class="alert-state-key" aria-labelledby="state-key-title">
+          <h3 id="state-key-title">State key</h3>
+          <p><strong>!! / !</strong> requires review · <strong>∅ + dashed edge</strong> means source data is missing · <strong>✓ + double edge</strong> means receipt is acknowledged. Acknowledgement never resolves or removes the clinical condition.</p>
+        </section>
+
+        <div class="alert-live" role="status" aria-live="polite" aria-atomic="true"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    (() => {
+      const region = document.getElementById('alert-region');
+      const cards = [...region.querySelectorAll('[data-alert-id]')];
+      const declaredTotal = Number(region.dataset.totalAlerts);
+      const live = region.querySelector('.alert-live');
+      let liveTimer;
+
+      function announce(message) {
+        window.clearTimeout(liveTimer);
+        live.textContent = message;
+        live.classList.add('is-visible');
+        liveTimer = window.setTimeout(() => live.classList.remove('is-visible'), 4200);
+      }
+
+      function updateCounts() {
+        const counts = cards.reduce((result, card) => {
+          result[card.dataset.state] = (result[card.dataset.state] || 0) + 1;
+          return result;
+        }, {});
+
+        region.querySelector('[data-count-total]').textContent = cards.length;
+        region.querySelector('[data-count-needs-ack]').textContent = counts['needs-ack'] || 0;
+        region.querySelector('[data-count-missing]').textContent = counts.missing || 0;
+        region.querySelector('[data-count-acknowledged]').textContent = counts.acknowledged || 0;
+      }
+
+      if (cards.length !== declaredTotal) {
+        region.setAttribute('data-count-integrity', 'mismatch');
+        announce(`Queue count mismatch: ${declaredTotal} declared, ${cards.length} rendered.`);
+      } else {
+        region.setAttribute('data-count-integrity', 'verified');
+      }
+
+      region.addEventListener('click', (event) => {
+        const acknowledge = event.target.closest('[data-acknowledge]');
+        const inspect = event.target.closest('[data-inspect-source]');
+
+        if (acknowledge && !acknowledge.disabled) {
+          const card = acknowledge.closest('[data-alert-id]');
+          const severity = card.dataset.severity;
+          const stateLabel = card.querySelector('[data-state-label]');
+          const glyph = card.querySelector('.state-glyph');
+          const note = card.querySelector('[data-ack-note]') || card.querySelector('.alert-support');
+
+          card.dataset.state = 'acknowledged';
+          stateLabel.textContent = `Acknowledged · ${severity}`;
+          glyph.textContent = '✓';
+          note.dataset.ackNote = '';
+          note.textContent = 'Acknowledged by D. Chen, RN just now · condition remains in queue';
+          acknowledge.textContent = 'Acknowledged';
+          acknowledge.disabled = true;
+          updateCounts();
+          announce(`${card.dataset.alertId} acknowledged. The alert remains visible and unresolved.`);
+          return;
+        }
+
+        if (inspect) {
+          const card = inspect.closest('[data-alert-id]');
+          const details = card.querySelector('details');
+          details.open = true;
+          details.querySelector('summary').focus();
+          announce(`${card.dataset.alertId} source context opened. No current value is available.`);
+        }
+      });
+
+      updateCounts();
+    })();
+  </script>
+</body>
+</html>

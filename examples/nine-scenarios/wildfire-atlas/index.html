@@ -1,0 +1,1781 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Ember Ridge — Live Wildfire Command Atlas</title>
+  <style>
+    :root {
+      --ground: #0c0e0b;
+      --ground-2: #111310;
+      --surface: #161a15;
+      --surface-raised: #1e221c;
+      --bone: #e0d8c8;
+      --bone-dim: #9a9284;
+      --ink: #c8c0b0;
+      --muted: #7a746c;
+      --ember: #ff6b35;
+      --ember-mid: #e0552a;
+      --ember-glow: #ffa07a;
+      --sand: #c8b87a;
+      --magenta: #c8328c;
+      --cyan: #32c8c8;
+      --cyan-dim: #1a7a7a;
+      --alert: #ffc040;
+      --danger: #ff4545;
+      --missing: #b8b0a0;
+      --focus: #c8ffb0;
+      --line: #2a2e28;
+      --line-bright: #404840;
+      --shadow: 0 20px 60px rgba(0,0,0,.5);
+      --mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      background: var(--ground);
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      margin: 0;
+      color: var(--bone);
+      background: var(--ground);
+      font-family: var(--mono);
+      line-height: 1.38;
+      min-width: 280px;
+    }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+
+    :focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: .6rem;
+      left: .6rem;
+      padding: .6rem .9rem;
+      background: var(--focus);
+      color: #0a0c0a;
+      font-weight: 800;
+      font-size: .65rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transform: translateY(-200%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .app {
+      max-width: 1840px;
+      margin: 0 auto;
+      padding: 0 clamp(.5rem, 1.5vw, 1.5rem) 7rem;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    .cmd-header {
+      display: grid;
+      grid-template-columns: minmax(16rem, 1.6fr) minmax(22rem, 1fr);
+      gap: clamp(.8rem, 2.5vw, 2.5rem);
+      align-items: end;
+      min-height: 9.5rem;
+      border-bottom: 2px solid var(--line-bright);
+      padding: 1.1rem 0 .9rem;
+    }
+
+    .eyebrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem .75rem;
+      align-items: center;
+      color: var(--sand);
+      font-size: .62rem;
+      font-weight: 750;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .live-pulse {
+      display: inline-flex;
+      gap: .38rem;
+      align-items: center;
+      color: var(--cyan);
+    }
+
+    .live-pulse::before {
+      content: "";
+      width: .5rem;
+      height: .5rem;
+      border: 2px solid var(--cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 0 .2rem rgba(50,200,200,.1);
+      animation: pulse-ring 2.2s ease-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0%, 30% { box-shadow: 0 0 0 .06rem rgba(50,200,200,.5); }
+      70%, 100% { box-shadow: 0 0 0 .4rem rgba(50,200,200,0); }
+    }
+
+    h1 {
+      max-width: 18ch;
+      margin: .5rem 0 .3rem;
+      font-size: clamp(1.9rem, 4.5vw, 4.2rem);
+      font-weight: 520;
+      letter-spacing: -.055em;
+      line-height: .9;
+    }
+
+    h1 em {
+      font-style: normal;
+      color: var(--ember);
+      font-weight: 340;
+    }
+
+    .subhead {
+      max-width: 58ch;
+      margin: .45rem 0 0;
+      color: var(--bone-dim);
+      font-size: .8rem;
+      line-height: 1.4;
+    }
+
+    .header-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+
+    .metric {
+      min-height: 4.4rem;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: .55rem .6rem;
+      background: rgba(14,17,14,.7);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: .55rem;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: .28rem;
+      font-size: clamp(.88rem, 1.3vw, 1.1rem);
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric strong small {
+      color: var(--muted);
+      font-size: .6em;
+      font-weight: 500;
+    }
+
+    /* ── STATE STRIP ─────────────────────────────────────── */
+    .mode-strip {
+      display: flex;
+      gap: .35rem;
+      align-items: center;
+      overflow-x: auto;
+      padding: .6rem 0;
+      border-bottom: 1px solid var(--line);
+      scrollbar-width: thin;
+    }
+
+    .mode-strip > span {
+      flex: 0 0 auto;
+      margin-right: .3rem;
+      color: var(--muted);
+      font-size: .58rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .state-btn,
+    .ghost-btn,
+    .icon-btn {
+      border: 1px solid var(--line-bright);
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .14s, border-color .14s, color .14s;
+    }
+
+    .state-btn {
+      flex: 0 0 auto;
+      min-height: 1.9rem;
+      padding: .2rem .55rem;
+      color: var(--bone-dim);
+      background: transparent;
+      font-size: .6rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .state-btn[aria-pressed="true"] {
+      color: #0a0e0a;
+      background: var(--cyan);
+      border-color: var(--cyan);
+      font-weight: 800;
+    }
+
+    .system-state {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: .6rem;
+      align-items: center;
+      min-height: 0;
+      overflow: hidden;
+      border-bottom: 0 solid var(--line);
+      padding: 0 .8rem;
+      background: var(--surface-raised);
+      opacity: 0;
+      transition: min-height .18s ease, padding .18s ease, opacity .18s ease, border-width .18s ease;
+    }
+
+    .system-state.is-visible {
+      min-height: 2.9rem;
+      border-bottom-width: 1px;
+      padding-block: .5rem;
+      opacity: 1;
+    }
+
+    .system-state .state-icon { font-weight: 900; font-size: 1rem; }
+    .system-state strong { font-size: .74rem; }
+    .system-state p { margin: .08rem 0 0; color: var(--bone-dim); font-size: .68rem; }
+    .system-state time { color: var(--muted); font-size: .6rem; font-variant-numeric: tabular-nums; }
+    .system-state[data-kind="loading"] .state-icon { animation: spin 1.1s linear infinite; }
+    .system-state[data-kind="error"] { border-left: 4px solid var(--danger); }
+    .system-state[data-kind="success"] { border-left: 4px solid var(--cyan); }
+    .system-state[data-kind="empty"] { border-left: 4px solid var(--missing); }
+
+    @keyframes spin { to { transform: rotate(1turn); } }
+
+    /* ── PRIMARY GRID ─────────────────────────────────────── */
+    .primary-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem);
+      min-height: 41rem;
+      border-right: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+
+    .map-panel {
+      min-width: 0;
+      border-right: 1px solid var(--line-bright);
+      background: #0e100d;
+    }
+
+    .panel-head {
+      display: flex;
+      gap: .7rem;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 3rem;
+      border-bottom: 1px solid var(--line);
+      padding: .5rem .7rem;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: .72rem;
+      font-weight: 720;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .section-code {
+      display: block;
+      color: var(--ember);
+      font-size: .58rem;
+      letter-spacing: .1em;
+      margin-bottom: .15rem;
+    }
+
+    .map-tools {
+      display: flex;
+      gap: .35rem;
+      align-items: center;
+    }
+
+    .ghost-btn, .icon-btn {
+      min-height: 1.9rem;
+      padding: .22rem .5rem;
+      color: var(--bone-dim);
+      background: #131713;
+      font-size: .58rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .ghost-btn[aria-pressed="true"] {
+      color: var(--bone);
+      border-color: var(--sand);
+    }
+
+    /* ── MAP STAGE ────────────────────────────────────────── */
+    .map-stage {
+      position: relative;
+      min-height: 34rem;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(ellipse 120% 60% at 50% 80%, rgba(40,20,10,.35) 0%, transparent 70%),
+        #0e100d;
+    }
+
+    .atlas-map {
+      display: block;
+      width: 100%;
+      height: 34rem;
+    }
+
+    /* SVG — terrain and contours */
+    .topo-main {
+      fill: none;
+      stroke: #3d3830;
+      stroke-width: 1;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .topo-major {
+      fill: none;
+      stroke: #524d42;
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .grid-line {
+      stroke: rgba(180,175,155,.06);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .road {
+      fill: none;
+      stroke: #8a7a60;
+      stroke-width: 1.5;
+      stroke-dasharray: 3 6;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .road.major {
+      stroke: #c0b08a;
+      stroke-width: 2.5;
+      stroke-dasharray: none;
+    }
+
+    .scar-fill {
+      fill: url(#burnedTex);
+      stroke: rgba(255,107,53,.12);
+      stroke-width: 1;
+    }
+
+    .fire-projected {
+      fill: none;
+      stroke: var(--alert);
+      stroke-width: 2.2;
+      stroke-dasharray: 6 8;
+      opacity: .5;
+      vector-effect: non-scaling-stroke;
+      animation: proj-flow 5.5s linear infinite;
+    }
+
+    @keyframes proj-flow { to { stroke-dashoffset: -42; } }
+
+    .fire-halo {
+      fill: none;
+      stroke: rgba(255,107,53,.16);
+      stroke-width: 22;
+      filter: url(#emberBlur);
+      vector-effect: non-scaling-stroke;
+    }
+
+    .fire-front {
+      fill: none;
+      stroke: url(#fireGrad);
+      stroke-width: 5.5;
+      stroke-dasharray: 4 10 18 6;
+      stroke-linecap: round;
+      animation: fire-march 6.5s linear infinite;
+      vector-effect: non-scaling-stroke;
+    }
+
+    @keyframes fire-march { to { stroke-dashoffset: -76; } }
+
+    .fire-trail {
+      fill: none;
+      stroke: rgba(200,180,120,.5);
+      stroke-width: 3;
+      stroke-dasharray: 2 7;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .wind-arrow {
+      stroke: var(--cyan);
+      stroke-width: 1.5;
+      opacity: .65;
+      marker-end: url(#arrowCyan);
+      vector-effect: non-scaling-stroke;
+    }
+
+    .wind-group.is-hidden { display: none; }
+
+    .risk-line {
+      fill: none;
+      stroke-width: 11;
+      stroke-linecap: butt;
+      opacity: .92;
+      cursor: pointer;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .risk-line[data-risk="EXTREME"] { stroke: url(#riskExtreme); }
+    .risk-line[data-risk="HIGH"] { stroke: url(#riskHigh); }
+    .risk-line[data-risk="MODERATE"] { stroke: url(#riskModerate); }
+    .risk-line[data-risk="WATCH"] { stroke: url(#riskWatch); }
+    .risk-line.is-active { stroke-width: 16; filter: url(#emberBlur); }
+
+    .map-label {
+      fill: var(--bone-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .07em;
+      paint-order: stroke;
+      stroke: #0e100d;
+      stroke-width: 3px;
+    }
+
+    .map-label.fire-name {
+      fill: var(--ember-glow);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .risk-glyph {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 900;
+      fill: var(--bone);
+      paint-order: stroke;
+      stroke: #0e100d;
+      stroke-width: 3px;
+    }
+
+    .map-coords {
+      position: absolute;
+      z-index: 6;
+      top: .6rem;
+      left: .65rem;
+      color: var(--bone-dim);
+      font-size: .58rem;
+      letter-spacing: .05em;
+      pointer-events: none;
+    }
+
+    .north-arrow {
+      position: absolute;
+      z-index: 6;
+      top: .6rem;
+      right: .65rem;
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2.6rem;
+      border: 1px solid var(--line-bright);
+      color: var(--sand);
+      background: rgba(12,14,11,.85);
+      font: 800 .6rem var(--mono);
+      clip-path: polygon(50% 0, 100% 38%, 74% 38%, 74% 100%, 26% 100%, 26% 38%, 0 38%);
+    }
+
+    /* ── MAP PINS ─────────────────────────────────────────── */
+    .map-pins {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .map-pin {
+      position: absolute;
+      z-index: 8;
+      left: var(--px);
+      top: var(--py);
+      display: grid;
+      grid-template-columns: 1.45rem auto;
+      gap: .3rem;
+      align-items: center;
+      max-width: 8.5rem;
+      border: 0;
+      padding: 0;
+      color: var(--bone);
+      background: transparent;
+      text-align: left;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      pointer-events: all;
+    }
+
+    .pin-icon {
+      display: grid;
+      place-items: center;
+      width: 1.45rem;
+      height: 1.45rem;
+      border: 2px solid var(--pin-color, var(--cyan));
+      background: #0e100d;
+      box-shadow: 0 0 0 3px rgba(14,16,13,.7);
+      font: 800 .52rem var(--mono);
+      color: var(--pin-color, var(--cyan));
+    }
+
+    .map-pin.air .pin-icon {
+      border-radius: 0;
+      transform: rotate(45deg);
+    }
+
+    .map-pin.air .pin-icon span { transform: rotate(-45deg); }
+
+    .pin-label {
+      padding: .1rem .22rem;
+      color: var(--bone);
+      background: rgba(12,14,11,.88);
+      font: 700 .52rem var(--mono);
+      white-space: nowrap;
+    }
+
+    .map-pin[data-state="DELAYED"] { --pin-color: var(--alert); }
+    .map-pin[data-state="CONFLICT"] { --pin-color: var(--danger); }
+    .map-pin[data-state="MISSING"] { --pin-color: var(--missing); }
+    .map-pin[data-state="STAGED"] { --pin-color: var(--sand); }
+
+    .map-pin.is-active { z-index: 12; }
+    .map-pin.is-active .pin-icon { box-shadow: 0 0 0 5px rgba(200,255,176,.2); }
+
+    /* ── MAP LEGEND ────────────────────────────────────────── */
+    .map-legend {
+      position: absolute;
+      z-index: 9;
+      right: .6rem;
+      bottom: .6rem;
+      width: min(26rem, calc(100% - 1.2rem));
+      border: 1px solid var(--line-bright);
+      padding: .4rem .5rem;
+      background: rgba(12,14,11,.94);
+    }
+
+    .legend-title {
+      margin-bottom: .3rem;
+      color: var(--muted);
+      font: 700 .54rem var(--mono);
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .legend-items {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .25rem;
+    }
+
+    .legend-item {
+      display: flex;
+      gap: .3rem;
+      align-items: center;
+      color: var(--bone-dim);
+      font-size: .54rem;
+    }
+
+    .risk-swatch {
+      flex: 0 0 auto;
+      width: 1.4rem;
+      height: .55rem;
+      border: 1px solid rgba(255,255,255,.28);
+      background-color: var(--swatch-color);
+      background-image: var(--swatch-pattern);
+    }
+
+    .swatch-xtreme { --swatch-color: #ff6b35; --swatch-pattern: repeating-linear-gradient(45deg, transparent 0 3px, #1a1208 3px 5px); }
+    .swatch-high { --swatch-color: #e0a040; --swatch-pattern: repeating-linear-gradient(0deg, transparent 0 4px, #1a1810 4px 6px); }
+    .swatch-moderate { --swatch-color: #c8b870; --swatch-pattern: radial-gradient(#1a1810 1.2px, transparent 1.2px); background-size: 5px 5px; }
+    .swatch-watch { --swatch-color: #78a898; --swatch-pattern: linear-gradient(90deg, transparent 38%, #1a2820 38% 62%, transparent 62%); }
+
+    /* ── FIRELINE CLOCK ────────────────────────────────────── */
+    .fireline-clock {
+      display: grid;
+      grid-template-columns: auto minmax(6rem, 1fr) auto;
+      gap: .65rem;
+      align-items: center;
+      min-height: 3.3rem;
+      border-top: 1px solid var(--line-bright);
+      padding: .5rem .7rem;
+      background: #141814;
+    }
+
+    .fireline-clock label {
+      display: grid;
+      gap: .06rem;
+      font-size: .68rem;
+      font-weight: 700;
+    }
+
+    .fireline-clock label span {
+      color: var(--ember);
+      font: .54rem var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .time-slider {
+      width: 100%;
+      accent-color: var(--ember);
+    }
+
+    .timecode {
+      min-width: 6.2rem;
+      color: var(--sand);
+      font-size: .62rem;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── DECISION RAIL ─────────────────────────────────────── */
+    .decision-rail {
+      min-width: 0;
+      background: #141a14;
+    }
+
+    .rail-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 3rem;
+      border-bottom: 1px solid var(--line);
+      padding: .5rem .7rem;
+    }
+
+    .rail-head h2 {
+      margin: 0;
+      font-size: .72rem;
+      font-weight: 720;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .win-count {
+      color: var(--alert);
+      font-size: .6rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .decision-pulse {
+      position: relative;
+      border-bottom: 1px solid var(--line-bright);
+      padding: .9rem .75rem .85rem 1rem;
+      overflow: hidden;
+      background: linear-gradient(105deg, rgba(255,107,53,.1), transparent 65%);
+    }
+
+    .decision-pulse::before {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: .32rem;
+      content: "";
+      background: repeating-linear-gradient(180deg, var(--ember) 0 6px, transparent 6px 11px);
+    }
+
+    .countdown {
+      display: block;
+      color: var(--ember);
+      font: 500 clamp(1.8rem, 3.5vw, 3rem) / .92 var(--mono);
+      letter-spacing: -.07em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .decision-pulse strong {
+      display: block;
+      margin-top: .45rem;
+      font-size: .8rem;
+    }
+
+    .decision-pulse p {
+      margin: .22rem 0 .6rem;
+      color: var(--bone-dim);
+      font-size: .66rem;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      min-height: 2.2rem;
+      padding: .38rem .62rem;
+      border: 1px solid;
+      font-size: .68rem;
+      font-weight: 760;
+      cursor: pointer;
+      transition: background .14s, border-color .14s, color .14s;
+    }
+
+    .primary-btn {
+      border-color: var(--ember);
+      color: #0e0804;
+      background: var(--ember);
+    }
+
+    .primary-btn:hover { background: #ff8050; }
+
+    .secondary-btn {
+      border-color: var(--line-bright);
+      color: var(--bone);
+      background: #1c201a;
+    }
+
+    .secondary-btn:hover,
+    .ghost-btn:hover,
+    .icon-btn:hover,
+    .state-btn:hover { border-color: var(--sand); color: var(--bone); }
+
+    .inspector {
+      min-height: 5rem;
+      border-bottom: 1px solid var(--line-bright);
+      padding: .6rem .7rem;
+      background: #111511;
+    }
+
+    .inspector .section-code { display: block; margin-bottom: .28rem; }
+    .inspector strong { display: block; font-size: .74rem; }
+    .inspector p { margin: .18rem 0 0; color: var(--bone-dim); font-size: .63rem; }
+
+    .sector-list,
+    .window-list,
+    .feed-list,
+    .conflict-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .sector-btn,
+    .entity-row {
+      display: grid;
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sector-btn {
+      grid-template-columns: 3.1rem minmax(0,1fr) auto;
+      gap: .5rem;
+      align-items: center;
+      min-height: 3.9rem;
+      padding: .5rem .7rem;
+    }
+
+    .sector-btn:hover,
+    .sector-btn[aria-pressed="true"],
+    .entity-row:hover { background: #1e241e; }
+
+    .sector-btn[aria-pressed="true"] { box-shadow: inset 4px 0 0 var(--focus); }
+
+    .risk-plate {
+      display: grid;
+      place-items: center;
+      min-height: 2.2rem;
+      border: 1px solid var(--line-bright);
+      padding: .18rem;
+      color: var(--bone);
+      background: #0e100d;
+      font-size: .52rem;
+      text-align: center;
+    }
+
+    .risk-plate::before {
+      width: 100%;
+      height: .44rem;
+      content: "";
+      background: var(--plate-color);
+      background-image: var(--plate-pattern);
+    }
+
+    .plate-xtreme { --plate-color: #ff6b35; --plate-pattern: repeating-linear-gradient(45deg, transparent 0 3px, #1a1208 3px 5px); }
+    .plate-high { --plate-color: #e0a040; --plate-pattern: repeating-linear-gradient(0deg, transparent 0 4px, #1a1810 4px 6px); }
+    .plate-moderate { --plate-color: #c8b870; --plate-pattern: radial-gradient(#1a1810 1.2px, transparent 1.2px); background-size: 5px 5px; }
+    .plate-watch { --plate-color: #78a898; --plate-pattern: linear-gradient(90deg, transparent 38%, #1a2820 38% 62%, transparent 62%); }
+
+    .sector-copy strong { display: block; font-size: .68rem; }
+    .sector-copy span { color: var(--bone-dim); font-size: .6rem; }
+    .sector-rate { color: var(--sand); font: 700 .62rem var(--mono); text-align: right; }
+    .sector-rate span { display: block; color: var(--muted); font-size: .5rem; font-weight: 500; }
+
+    .window-list li {
+      display: grid;
+      grid-template-columns: 3rem minmax(0,1fr) auto;
+      gap: .5rem;
+      align-items: center;
+      min-height: 3.2rem;
+      border-bottom: 1px solid var(--line);
+      padding: .44rem .7rem;
+    }
+
+    .action-time {
+      color: var(--alert);
+      font-size: .68rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .action-time::before { content: "◷ "; }
+    .window-copy strong { display: block; font-size: .64rem; }
+    .window-copy span { display: block; margin-top: .06rem; color: var(--muted); font-size: .56rem; }
+
+    .line-btn {
+      min-height: 1.75rem;
+      padding: .2rem .4rem;
+      color: var(--bone);
+      background: transparent;
+      border: 1px solid var(--line-bright);
+      font: 700 .55rem var(--mono);
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color .14s, color .14s;
+    }
+
+    .line-btn:hover { border-color: var(--ember-mid); color: var(--ember); }
+
+    /* ── OPS LATTICE ───────────────────────────────────────── */
+    .ops-lattice {
+      display: grid;
+      grid-template-columns: minmax(22rem, 1.3fr) minmax(18rem, 1fr) minmax(16rem, .8fr);
+      border: 1px solid var(--line);
+      border-top: 0;
+      background: var(--surface);
+    }
+
+    .ops-section {
+      min-width: 0;
+      border-right: 1px solid var(--line-bright);
+    }
+
+    .ops-section:last-child { border-right: 0; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 2.8rem;
+      border-bottom: 1px solid var(--line);
+      padding: .48rem .65rem;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: .72rem;
+      font-weight: 720;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .section-head .count {
+      color: var(--sand);
+      font: 700 .62rem var(--mono);
+    }
+
+    .entity-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .entity-table th {
+      border-bottom: 1px solid var(--line);
+      padding: .36rem .42rem;
+      color: var(--muted);
+      font-size: .52rem;
+      font-weight: 650;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+
+    .entity-table td {
+      border-bottom: 1px solid rgba(42,46,40,.7);
+      padding: .4rem .42rem;
+      color: var(--bone-dim);
+      font-size: .56rem;
+      vertical-align: middle;
+    }
+
+    .entity-table tr { cursor: pointer; }
+    .entity-table tbody tr:hover,
+    .entity-table tbody tr:focus-within { background: #202820; }
+    .entity-table button {
+      width: 100%;
+      border: 0;
+      padding: 0;
+      color: var(--bone);
+      background: transparent;
+      font: 700 .6rem var(--mono);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .status {
+      display: inline-flex;
+      gap: .25rem;
+      align-items: center;
+      color: var(--status-color, var(--bone-dim));
+      font-size: .54rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .status::before {
+      content: var(--status-sym, "•");
+      color: currentColor;
+      font-size: .78rem;
+      line-height: 1;
+    }
+
+    .status[data-state="CURRENT"],
+    .status[data-state="ON LINE"],
+    .status[data-state="AIRBORNE"],
+    .status[data-state="READY"] { --status-color: var(--cyan); --status-sym: "✓"; }
+    .status[data-state="DELAYED"] { --status-color: var(--alert); --status-sym: "◷"; }
+    .status[data-state="CONFLICT"] { --status-color: var(--danger); --status-sym: "!"; }
+    .status[data-state="MISSING"] { --status-color: var(--missing); --status-sym: "×"; }
+    .status[data-state="STALE"] { --status-color: var(--sand); --status-sym: "≈"; }
+    .status[data-state="STAGED"] { --status-color: var(--sand); --status-sym: "◇"; }
+    .status[data-state="REST"],
+    .status[data-state="UNAVAILABLE"] { --status-color: var(--muted); --status-sym: "—"; }
+
+    /* feeds / conflicts */
+    .feeds-conflicts {
+      display: grid;
+      grid-template-rows: auto auto;
+    }
+
+    .feed-list li,
+    .conflict-list li {
+      border-bottom: 1px solid var(--line);
+      padding: .44rem .6rem;
+    }
+
+    .feed-row {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: .45rem;
+      align-items: center;
+    }
+
+    .feed-row strong { display: block; font-size: .6rem; }
+    .feed-row small { display: block; margin-top: .1rem; color: var(--muted); font-size: .53rem; }
+    .feed-time { color: var(--bone-dim); font-size: .54rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+    .conflict-item {
+      display: grid;
+      grid-template-columns: 2.5rem minmax(0,1fr);
+      gap: .45rem;
+    }
+
+    .conflict-code {
+      align-self: start;
+      border: 1px solid var(--danger);
+      padding: .12rem;
+      color: var(--danger);
+      font: 800 .52rem var(--mono);
+      text-align: center;
+    }
+
+    .conflict-item strong { display: block; font-size: .6rem; }
+    .conflict-item p { margin: .12rem 0 0; color: var(--bone-dim); font-size: .54rem; }
+    .conflict-item.is-resolved { opacity: .5; }
+    .conflict-item.is-resolved .conflict-code { border-color: var(--cyan); color: var(--cyan); }
+
+    /* ── COMMAND DOCK ──────────────────────────────────────── */
+    .command-dock {
+      position: fixed;
+      z-index: 30;
+      right: max(.7rem, calc((100vw - min(100vw, 1840px)) / 2 + 1.5rem));
+      bottom: .8rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(7.5rem, auto));
+      gap: .38rem;
+      border: 1px solid var(--line-bright);
+      padding: .38rem;
+      background: rgba(12,14,11,.95);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .command-dock::before {
+      position: absolute;
+      right: .4rem;
+      bottom: calc(100% + .25rem);
+      color: var(--muted);
+      content: "CRITICAL ACTIONS · ALWAYS AVAILABLE";
+      font: .5rem var(--mono);
+      letter-spacing: .09em;
+    }
+
+    .dock-btn {
+      min-height: 2.6rem;
+      border: 1px solid var(--line-bright);
+      padding: .4rem .55rem;
+      color: var(--bone);
+      background: #1a201a;
+      font-size: .63rem;
+      font-weight: 760;
+      cursor: pointer;
+      transition: border-color .14s;
+    }
+
+    .dock-btn:first-child { border-color: var(--ember); background: #3a1e14; }
+    .dock-btn:hover { border-color: var(--sand); }
+
+    /* ── DIALOG ─────────────────────────────────────────────── */
+    dialog {
+      width: min(30rem, calc(100% - 2rem));
+      border: 1px solid var(--line-bright);
+      border-radius: 2px;
+      padding: 0;
+      color: var(--bone);
+      background: #161c16;
+      box-shadow: 0 30px 100px #000;
+    }
+
+    dialog::backdrop { background: rgba(4,6,4,.78); backdrop-filter: blur(3px); }
+
+    .dialog-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding: .65rem .8rem;
+    }
+
+    .dialog-head span { color: var(--ember); font: 700 .58rem var(--mono); letter-spacing: .09em; }
+    .dialog-head button { border: 0; color: var(--bone-dim); background: transparent; cursor: pointer; font-size: .9rem; }
+
+    .dialog-body { padding: .9rem; }
+    .dialog-body h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
+    .dialog-body p { margin: .3rem 0 .7rem; color: var(--bone-dim); font-size: .74rem; }
+
+    .impact-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+      margin-bottom: .8rem;
+    }
+
+    .impact-block div { border: 1px solid var(--line); padding: .55rem; }
+    .impact-block span { display: block; color: var(--muted); font: .54rem var(--mono); text-transform: uppercase; }
+    .impact-block strong { display: block; margin-top: .2rem; font-size: .7rem; }
+
+    .dialog-actions {
+      display: flex;
+      gap: .45rem;
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+      padding: .65rem .8rem;
+    }
+
+    /* ── TOAST ─────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      z-index: 60;
+      top: .9rem;
+      left: 50%;
+      width: min(27rem, calc(100% - 2rem));
+      border: 1px solid var(--cyan);
+      padding: .65rem .8rem;
+      color: var(--bone);
+      background: #142828;
+      box-shadow: var(--shadow);
+      font-size: .72rem;
+      transform: translate(-50%, -160%);
+      transition: transform .2s ease;
+    }
+
+    .toast.is-visible { transform: translate(-50%, 0); }
+
+    /* ── SR STATUS ──────────────────────────────────────────── */
+    .sr-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* ── RESPONSIVE ────────────────────────────────────────── */
+    @media (max-width: 1050px) {
+      .cmd-header { grid-template-columns: 1fr; }
+      .header-metrics { max-width: 44rem; }
+      .primary-grid { grid-template-columns: minmax(0, 1.7fr) minmax(16rem, .8fr); }
+      .ops-lattice { grid-template-columns: 1fr 1fr; }
+      .feeds-conflicts { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+      .feed-group { border-right: 1px solid var(--line-bright); }
+    }
+
+    @media (max-width: 740px) {
+      .app { padding-inline: .5rem; padding-bottom: 6rem; }
+      .cmd-header { min-height: 0; padding-top: .9rem; }
+      h1 { font-size: clamp(2.1rem, 12vw, 3.6rem); }
+      .header-metrics { grid-template-columns: repeat(2, 1fr); }
+      .metric { min-height: 3.5rem; }
+      .primary-grid { grid-template-columns: 1fr; }
+      .map-panel { border-right: 0; border-bottom: 1px solid var(--line-bright); }
+      .map-stage { min-height: 30rem; }
+      .atlas-map { width: 130%; height: 30rem; transform: translateX(-15%); }
+      .map-pin .pin-label { display: none; }
+      .map-pin { grid-template-columns: 1.45rem; }
+      .map-legend { right: .4rem; bottom: .4rem; padding: .35rem; }
+      .legend-items { grid-template-columns: repeat(2, 1fr); }
+      .fireline-clock { grid-template-columns: 1fr auto; }
+      .time-slider { grid-column: 1 / -1; grid-row: 2; }
+      .decision-pulse .countdown { font-size: 2.8rem; }
+      .ops-lattice { grid-template-columns: 1fr; }
+      .ops-section { border-right: 0; border-bottom: 1px solid var(--line-bright); }
+      .feeds-conflicts { grid-template-columns: 1fr; }
+      .feed-group { border-right: 0; border-bottom: 1px solid var(--line-bright); }
+      .command-dock {
+        right: auto;
+        bottom: .4rem;
+        left: .4rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: calc(100% - .8rem);
+        overflow: hidden;
+      }
+      .command-dock::before { display: none; }
+      .dock-btn { min-width: 0; min-height: 2.8rem; padding: .3rem .24rem; font-size: .56rem; }
+      .dock-btn .wlabel { display: none; }
+      .dialog-actions { grid-template-columns: 1fr 1fr; }
+      .dialog-actions button { min-height: 2.6rem; }
+    }
+
+    @media (max-width: 400px) {
+      .panel-head { align-items: flex-start; }
+      .map-tools { flex-wrap: wrap; justify-content: flex-end; }
+      .sector-btn { grid-template-columns: 2.7rem minmax(0,1fr) auto; }
+      .window-list li { grid-template-columns: 2.8rem minmax(0,1fr); }
+      .window-list .line-btn { grid-column: 2; justify-self: start; }
+      .entity-table th:nth-child(4),
+      .entity-table td:nth-child(4) { display: none; }
+      .impact-block { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+      }
+      .fire-front { stroke-dasharray: 10 8; }
+      .fire-projected { stroke-dasharray: 4 7; }
+      .live-pulse::before { box-shadow: 0 0 0 .1rem rgba(50,200,200,.3); }
+    }
+
+    @media (forced-colors: active) {
+      .risk-swatch,
+      .risk-plate::before { border: 2px solid CanvasText; background: Canvas; }
+      .risk-line { stroke: CanvasText !important; }
+      .fire-front, .fire-halo { stroke: Highlight; }
+      .status, .risk-plate { color: CanvasText; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#atlas">Skip to live atlas</a>
+  <div class="app">
+    <header class="cmd-header">
+      <div>
+        <div class="eyebrow">
+          <span class="live-pulse">Operational picture live</span>
+          <span>Northstar IMT · OP 03 · 20 Jul 2026</span>
+        </div>
+        <h1>Ember Ridge <em>Command Atlas</em></h1>
+        <p class="subhead">The active edge is the clock. Commit people and airspace before each decision window closes.</p>
+      </div>
+      <div class="header-metrics" aria-label="Incident summary">
+        <div class="metric"><span>Estimated area</span><strong>38,420 <small>AC</small></strong></div>
+        <div class="metric"><span>Containment</span><strong>18<small>%</small></strong></div>
+        <div class="metric"><span>Personnel</span><strong>312</strong></div>
+        <div class="metric"><span>Local clock</span><strong id="incidentClock">10:26:41</strong></div>
+      </div>
+    </header>
+
+    <nav class="mode-strip" aria-label="Preview interface states">
+      <span>State proof</span>
+      <button class="state-btn" type="button" data-mode="default" aria-pressed="true">Default</button>
+      <button class="state-btn" type="button" data-mode="loading" aria-pressed="false">Loading</button>
+      <button class="state-btn" type="button" data-mode="empty" aria-pressed="false">Empty</button>
+      <button class="state-btn" type="button" data-mode="error" aria-pressed="false">Error</button>
+      <button class="state-btn" type="button" data-mode="success" aria-pressed="false">Success</button>
+    </nav>
+
+    <section class="system-state" id="systemState" data-kind="default" role="status" aria-live="polite">
+      <span class="state-icon" aria-hidden="true">•</span>
+      <div><strong id="stateTitle">Operational picture current</strong><p id="stateDescription">All received sources are reconciled to the last verified frame.</p></div>
+      <time id="stateTime">10:26:41</time>
+    </section>
+
+    <main id="atlas">
+      <div class="primary-grid">
+        <section class="map-panel" aria-labelledby="atlas-title">
+          <div class="panel-head">
+            <div>
+              <span class="section-code">01 / FIRELINE FIELD</span>
+              <h2 id="atlas-title">Live perimeter &amp; resource relationship</h2>
+            </div>
+            <div class="map-tools" aria-label="Map display controls">
+              <button class="ghost-btn" type="button" id="windToggle" aria-pressed="true">Wind on</button>
+              <button class="ghost-btn" type="button" id="returnLive">Return live</button>
+            </div>
+          </div>
+
+          <div class="map-stage" id="mapStage" aria-busy="false">
+            <div class="map-coords">34°17′ N · 112°06′ W · UTM 12S</div>
+            <div class="north-arrow" aria-label="North points up">N</div>
+            <svg class="atlas-map" id="atlasMap" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="mapTitle mapDesc">
+              <title id="mapTitle">Ember Ridge live fire perimeter map</title>
+              <desc id="mapDesc">A dynamic fireline crosses five risk sectors. Crew and aircraft buttons are positioned from the same resource records shown in the ledgers. Wind vectors move east-northeast.</desc>
+              <defs>
+                <pattern id="burnedTex" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(23)">
+                  <rect width="20" height="20" fill="#221510"></rect>
+                  <path d="M0 5h20M0 14h20" stroke="#5a2e18" stroke-width=".8" opacity=".45"></path>
+                  <circle cx="6" cy="9" r="1.2" fill="#a05028" opacity=".28"></circle>
+                </pattern>
+                <pattern id="riskExtreme" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <rect width="10" height="10" fill="#ff6b35"></rect>
+                  <path d="M0 2h10M0 7h10" stroke="#1a0e06" stroke-width="3"></path>
+                </pattern>
+                <pattern id="riskHigh" width="9" height="9" patternUnits="userSpaceOnUse">
+                  <rect width="9" height="9" fill="#e0a040"></rect>
+                  <path d="M3 0v9M7 0v9" stroke="#201a0c" stroke-width="2"></path>
+                </pattern>
+                <pattern id="riskModerate" width="8" height="8" patternUnits="userSpaceOnUse">
+                  <rect width="8" height="8" fill="#c8b870"></rect>
+                  <circle cx="4" cy="4" r="1.4" fill="#201e14"></circle>
+                </pattern>
+                <pattern id="riskWatch" width="11" height="11" patternUnits="userSpaceOnUse">
+                  <rect width="11" height="11" fill="#78a898"></rect>
+                  <path d="M0 5.5h11" stroke="#1a2820" stroke-width="2"></path>
+                </pattern>
+                <linearGradient id="fireGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#e0b870"></stop>
+                  <stop offset=".4" stop-color="#ff6b35"></stop>
+                  <stop offset="1" stop-color="#ffc060"></stop>
+                </linearGradient>
+                <filter id="emberBlur" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="5" result="blur"></feGaussianBlur>
+                  <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+                </filter>
+                <marker id="arrowCyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M0 0 10 5 0 10z" fill="#32c8c8"></path>
+                </marker>
+              </defs>
+
+              <!-- terrain: hand-drawn irregular contours -->
+              <g aria-hidden="true">
+                <path class="topo-major" d="M-15 90C150 18 250 138 375 80s228-46 346 20 212 42 334-20"></path>
+                <path class="topo-main" d="M-15 118C128 55 248 170 391 114s215-30 333 22 197 38 318-10"></path>
+                <path class="topo-main" d="M-28 158c144-46 271 63 410 8s241-26 350 26 199 22 318-10"></path>
+                <path class="topo-major" d="M-8 222c124-50 235 36 352 12s185-50 300-16 213 60 394 16"></path>
+                <path class="topo-main" d="M-18 263c128-39 222 18 344 2s191-44 311-6 224 70 412 4"></path>
+                <path class="topo-major" d="M-8 342c108-32 200 0 320-13s225-34 338 8 215 58 395 14"></path>
+                <path class="topo-main" d="M-18 382c105-27 200 9 313 0s227-24 338 9 215 48 418 16"></path>
+                <path class="topo-major" d="M-8 456c98-17 200 22 308 7s210-33 330 0 250 58 428 12"></path>
+                <path class="topo-main" d="M-28 501c112-16 203 19 315 10s227-28 342 4 255 52 428 19"></path>
+                <path class="topo-main" d="M95 0c34 88-30 140 6 214s20 154-10 218 10 117 38 201"></path>
+                <path class="topo-major" d="M278-10c-16 90 42 131 17 217s-5 137 30 207-5 140 14 219"></path>
+                <path class="topo-main" d="M508-8c-23 89 40 153 10 236s19 145 42 209 9 129-8 191"></path>
+                <path class="topo-major" d="M762-10c-40 91 31 149 9 240s29 135 22 207 14 141 54 193"></path>
+                <g opacity=".5">
+                  <path class="grid-line" d="M200 0v620M400 0v620M600 0v620M800 0v620"></path>
+                  <path class="grid-line" d="M0 155h1000M0 310h1000M0 465h1000"></path>
+                </g>
+                <path class="road major" d="M-18 512C180 458 300 496 466 438s362-63 570-17"></path>
+                <path class="road" d="M188 645c55-116 88-150 171-209s112-138 127-262"></path>
+                <path class="road" d="M792 658c-53-90-87-136-98-222s-51-170-111-251"></path>
+                <text class="map-label" x="40" y="498">EGRESS 02 / HAWK CREEK RD</text>
+                <text class="map-label" x="676" y="405">DIVISION BREAK D/E</text>
+                <text class="map-label" x="432" y="110">EMBER RIDGE 7,840′</text>
+              </g>
+
+              <path class="scar-fill" id="burnScar" d="M-28 198C108 182 154 237 268 211S450 188 530 248s169 32 234 88 150 78 292 66L1030-18H-28Z"></path>
+              <path class="fire-projected" id="projectionPath" d="M-10 294C104 273 160 324 282 292s187-2 264 56 175 21 233 79 153 73 264 57"></path>
+              <text class="map-label" x="778" y="459">+45 MIN PROJECTION · WIND MODEL</text>
+
+              <g class="wind-group" id="windGroup" aria-label="Wind west-southwest at 24 miles per hour, gusting 36">
+                <path class="wind-arrow" d="M130 113l62-25"></path>
+                <path class="wind-arrow" d="M358 142l62-25"></path>
+                <path class="wind-arrow" d="M605 115l62-25"></path>
+                <path class="wind-arrow" d="M836 143l62-25"></path>
+                <text class="map-label" x="46" y="75">WSW 24 / G 36 MPH</text>
+              </g>
+
+              <path class="fire-halo" id="fireHalo" d="M-20 257C94 234 153 282 271 256s186-2 266 56 168 22 233 78 154 79 274 60"></path>
+              <path class="fire-front" id="fireFront" d="M-20 257C94 234 153 282 271 256s186-2 266 56 168 22 233 78 154 79 274 60"></path>
+              <path class="fire-trail" id="fireTrail" d="M-20 257C94 234 153 282 271 256s186-2 266 56 168 22 233 78 154 79 274 60" opacity="0"></path>
+
+              <g id="riskLines" aria-label="Selectable current fireline sectors">
+                <path tabindex="0" role="button" aria-label="Division A, extreme risk, select sector" class="risk-line" data-sector="DIV-A" data-risk="EXTREME" d="M16 252C88 238 138 268 210 267"></path>
+                <path tabindex="0" role="button" aria-label="Division B, high risk, select sector" class="risk-line" data-sector="DIV-B" data-risk="HIGH" d="M215 266C293 248 358 235 435 266"></path>
+                <path tabindex="0" role="button" aria-label="Division C, extreme risk, select sector" class="risk-line" data-sector="DIV-C" data-risk="EXTREME" d="M440 268C500 290 520 331 592 338"></path>
+                <path tabindex="0" role="button" aria-label="Division D, moderate risk, select sector" class="risk-line" data-sector="DIV-D" data-risk="MODERATE" d="M598 338C683 342 703 384 776 393"></path>
+                <path tabindex="0" role="button" aria-label="Division E, watch risk, select sector" class="risk-line" data-sector="DIV-E" data-risk="WATCH" d="M783 396C870 433 933 457 1015 454"></path>
+              </g>
+              <text class="risk-glyph" x="33" y="232">▲▲▲</text>
+              <text class="map-label" x="56" y="232">DIV-A</text>
+              <text class="risk-glyph" x="248" y="236">▰▰</text>
+              <text class="map-label" x="270" y="236">DIV-B</text>
+              <text class="risk-glyph" x="490" y="304">▲▲▲</text>
+              <text class="map-label" x="512" y="304">DIV-C</text>
+              <text class="risk-glyph" x="666" y="364">•••</text>
+              <text class="map-label" x="686" y="364">DIV-D</text>
+              <text class="risk-glyph" x="845" y="424">══</text>
+              <text class="map-label" x="865" y="424">DIV-E</text>
+            </svg>
+
+            <div class="map-pins" id="mapPins" aria-label="Map resources"></div>
+
+            <div class="map-legend" aria-label="Risk encoding legend">
+              <div class="legend-title">Fireline risk · color + pattern + label</div>
+              <div class="legend-items">
+                <span class="legend-item"><i class="risk-swatch swatch-xtreme"></i>▲▲▲ Extreme</span>
+                <span class="legend-item"><i class="risk-swatch swatch-high"></i>▰▰ High</span>
+                <span class="legend-item"><i class="risk-swatch swatch-moderate"></i>••• Moderate</span>
+                <span class="legend-item"><i class="risk-swatch swatch-watch"></i>══ Watch</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fireline-clock">
+            <label for="timeSlider"><span>Signature move</span>Scrub the active edge</label>
+            <input class="time-slider" id="timeSlider" type="range" min="0" max="2" step="1" value="2" aria-describedby="timeReadout">
+            <output class="timecode" id="timeReadout">10:25 · VERIFIED</output>
+          </div>
+        </section>
+
+        <aside class="decision-rail" aria-labelledby="decision-title">
+          <div class="rail-head"><h2 id="decision-title">Decision edge</h2><span class="win-count" id="openWinCount">3 WINDOWS</span></div>
+          <div class="decision-pulse">
+            <span class="countdown" id="criticalCountdown">06:18</span>
+            <strong>Clear Tanker 12 through Drop Box Alpha</strong>
+            <p>Airspace conflict A-42 is holding Helitack 7 west of the column. Decision closes at 10:33.</p>
+            <button class="primary-btn" type="button" data-action="deconflict">Deconflict airspace</button>
+          </div>
+          <div class="inspector" id="inspector" aria-live="polite">
+            <span class="section-code">CURRENT SELECTION</span>
+            <strong>Division C · Juniper Saddle</strong>
+            <p>Extreme ▲▲▲ · +310 ac/hr · Crew C-22 delayed 08m · dozer line 41% complete.</p>
+          </div>
+          <ul class="sector-list" id="sectorList" aria-label="Fireline sectors"></ul>
+          <div class="rail-head"><h2>Action windows</h2><span class="win-count">BY CLOSURE</span></div>
+          <ul class="window-list" id="windowList"></ul>
+        </aside>
+      </div>
+
+      <section class="ops-lattice" aria-label="Resource and data ledgers">
+        <section class="ops-section" aria-labelledby="crew-title">
+          <div class="section-head"><div><span class="section-code">02 / GROUND</span><h2 id="crew-title">Crew ledger</h2></div><span class="count" id="crewCount">8 UNITS</span></div>
+          <table class="entity-table">
+            <thead><tr><th style="width:17%">ID</th><th style="width:30%">Assignment</th><th style="width:28%">State</th><th>Last / ETA</th></tr></thead>
+            <tbody id="crewRows"></tbody>
+          </table>
+        </section>
+
+        <section class="ops-section" aria-labelledby="air-title">
+          <div class="section-head"><div><span class="section-code">03 / AIR</span><h2 id="air-title">Aircraft ledger</h2></div><span class="count" id="aircraftCount">5 SHIPS</span></div>
+          <table class="entity-table">
+            <thead><tr><th style="width:19%">Call</th><th style="width:28%">Mission</th><th style="width:28%">State</th><th>Fuel / ETA</th></tr></thead>
+            <tbody id="aircraftRows"></tbody>
+          </table>
+        </section>
+
+        <section class="ops-section feeds-conflicts" aria-label="Data and resource conflicts">
+          <div class="feed-group">
+            <div class="section-head"><div><span class="section-code">04 / SIGNAL</span><h2>Feed health</h2></div><span class="count">4 FEEDS</span></div>
+            <ul class="feed-list" id="feedList"></ul>
+          </div>
+          <div>
+            <div class="section-head"><div><span class="section-code">05 / COLLISION</span><h2>Resource conflicts</h2></div><span class="count" id="conflictCount">4 OPEN</span></div>
+            <ul class="conflict-list" id="conflictList"></ul>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <nav class="command-dock" id="criticalActions" aria-label="Critical actions">
+    <button class="dock-btn" type="button" data-action="deconflict">Clear <span class="wlabel">airspace</span></button>
+    <button class="dock-btn" type="button" data-action="reserve">Send <span class="wlabel">reserve</span></button>
+    <button class="dock-btn" type="button" data-action="acknowledge">Ack <span class="wlabel">stale feed</span></button>
+  </nav>
+
+  <dialog id="commandDialog" aria-labelledby="dialogTitle" aria-describedby="dialogSummary">
+    <div class="dialog-head"><span>COMMAND CONFIRMATION</span><button type="button" id="dialogClose" aria-label="Close dialog">✕</button></div>
+    <div class="dialog-body">
+      <h2 id="dialogTitle">Confirm command</h2>
+      <p id="dialogSummary">Review operational effect before transmitting.</p>
+      <div class="impact-block"><div><span>Affects</span><strong id="dialogAffects">—</strong></div><div><span>Window</span><strong id="dialogWindow">—</strong></div></div>
+    </div>
+    <div class="dialog-actions">
+      <button class="secondary-btn" id="dialogCancel" type="button">Cancel</button>
+      <button class="primary-btn" id="dialogConfirm" type="button">Transmit command</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sr-status" id="srStatus" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const sectors = [
+        { id: 'DIV-A', short: 'A', name: 'Cedar Crown', risk: 'EXTREME', glyph: '▲▲▲', rate: '+220 ac/hr', window: '14m', detail: 'Spotting across Cedar Creek · Crew C-11 holding anchor · crown run probability 82%.', plateClass: 'plate-xtreme' },
+        { id: 'DIV-B', short: 'B', name: 'Granite Draw', risk: 'HIGH', glyph: '▰▰', rate: '+140 ac/hr', window: '23m', detail: 'Tanker 12 requested · retardant line 63% complete · visibility 1.8 mi.', plateClass: 'plate-high' },
+        { id: 'DIV-C', short: 'C', name: 'Juniper Saddle', risk: 'EXTREME', glyph: '▲▲▲', rate: '+310 ac/hr', window: '08m', detail: 'Crew C-22 delayed 08m · dozer line 41% complete · wind alignment increasing.', plateClass: 'plate-xtreme' },
+        { id: 'DIV-D', short: 'D', name: 'Hawk Creek', risk: 'MODERATE', glyph: '•••', rate: '+70 ac/hr', window: '31m', detail: 'Direct line holding · medevac lane crosses retardant block · road egress open.', plateClass: 'plate-moderate' },
+        { id: 'DIV-E', short: 'E', name: 'Ponderosa Rim', risk: 'WATCH', glyph: '══', rate: '+25 ac/hr', window: '46m', detail: 'Structure group S-08 also assigned to roadblock R-17 · ember wash intermittent.', plateClass: 'plate-watch' }
+      ];
+
+      const crews = [
+        { id: 'C-11', type: 'Hotshot 1', assignment: 'DIV-A anchor', state: 'ON LINE', detail: '20 personnel · Cedar Creek heel', time: '1m ago', x: 15, y: 45 },
+        { id: 'C-14', type: 'Handcrew 2', assignment: 'DIV-B line', state: 'ON LINE', detail: '18 personnel · handline north', time: '2m ago', x: 31, y: 40 },
+        { id: 'C-19', type: 'Type 2 IA', assignment: 'South reserve', state: 'STAGED', detail: '17 personnel · available to DIV-C', time: '4m ago', x: 45, y: 73 },
+        { id: 'C-22', type: 'Hotshot 1', assignment: 'DIV-C access', state: 'DELAYED', detail: '21 personnel · transport blocked at Gate 4', time: 'ETA 08m', x: 55, y: 56 },
+        { id: 'C-31', type: 'Dozer team', assignment: 'DIV-C line', state: 'ON LINE', detail: '2 dozers · line 41% complete', time: '1m ago', x: 63, y: 64 },
+        { id: 'E-07', type: 'Engine strike', assignment: 'DIV-D flank', state: 'ON LINE', detail: '5 engines · mobile attack', time: '38s ago', x: 72, y: 68 },
+        { id: 'M-04', type: 'Medical unit', assignment: 'Hawk Creek', state: 'STAGED', detail: 'ALS · lane intersects Drop Block B', time: '3m ago', x: 78, y: 78 },
+        { id: 'S-08', type: 'Structure grp', assignment: 'DIV-E / R-17', state: 'CONFLICT', detail: '12 engines · double-booked to roadblock', time: '1m ago', x: 88, y: 73 }
+      ];
+
+      const aircraft = [
+        { id: 'T-12', type: 'VLAT', assignment: 'Drop Box Alpha', state: 'AIRBORNE', detail: 'Lead 9 attached · 8,900 gal', time: 'ETA 04:20', x: 36, y: 22 },
+        { id: 'T-17', type: 'LAT', assignment: 'Reload / Mesa', state: 'DELAYED', detail: 'Retardant pump fault · delay 11m', time: 'ETA 21m', x: 19, y: 17 },
+        { id: 'H-03', type: 'Type 1 heli', assignment: 'DIV-A buckets', state: 'AIRBORNE', detail: 'Dip site Cedar · 78% fuel', time: '6m fuel', x: 24, y: 33 },
+        { id: 'H-07', type: 'Type 2 heli', assignment: 'West hold', state: 'CONFLICT', detail: 'Blocked by T-12 drop corridor A-42', time: 'Hold 06m', x: 48, y: 31 },
+        { id: 'L-09', type: 'Lead plane', assignment: 'Alpha lead', state: 'MISSING', detail: 'Position packet absent · voice contact maintained', time: '6m unseen', x: 66, y: 27 }
+      ];
+
+      const feeds = [
+        { id: 'AVL', name: 'Resource AVL', state: 'CURRENT', detail: '13 / 13 mapped entities', time: '36s' },
+        { id: 'WIND', name: 'Ridge wind mesh', state: 'CURRENT', detail: 'WSW 24 · gust 36 mph', time: '48s' },
+        { id: 'IR', name: 'IR perimeter', state: 'STALE', detail: 'Last verified frame 10:12', time: '14m stale', acknowledged: false },
+        { id: 'RAWS-4', name: 'Lookout RAWS-4', state: 'MISSING', detail: 'No packet since 09:59 · model substitute active', time: '27m absent' }
+      ];
+
+      const conflicts = [
+        { id: 'A-42', title: 'H-07 × Tanker 12 corridor', detail: 'West hold overlaps Drop Box Alpha until 10:33.', status: 'OPEN' },
+        { id: 'R-17', title: 'S-08 × Egress Road 2', detail: 'Structure group assigned to DIV-E and roadblock.', status: 'OPEN' },
+        { id: 'C-09', title: 'Tender × Tanker 12 support', detail: 'Single refill lane requested by both at 10:37.', status: 'OPEN' },
+        { id: 'M-04', title: 'Medical lane × Drop Block B', detail: 'Retardant line crosses primary medevac route.', status: 'OPEN' }
+      ];
+
+      const windows = [
+        { time: '06m', title: 'Clear Drop Box Alpha', detail: 'A-42 · T-12 + H-07', action: 'deconflict' },
+        { time: '08m', title: 'Commit reserve to DIV-C', detail: 'C-19 · Juniper Saddle', action: 'reserve' },
+        { time: '14m', title: 'Accept stale IR boundary', detail: 'IR frame · 10:12 verified', action: 'acknowledge' }
+      ];
+
+      const frames = [
+        { label: '09:55 · ARCHIVE', path: 'M-20 224C94 207 161 249 271 223s184-3 258 50 160 17 224 69 151 70 280 51', scar: 'M-28 168C98 151 156 205 268 178S443 155 516 211s161 27 224 78 156 72 304 58L1030-18H-28Z' },
+        { label: '10:10 · VERIFIED', path: 'M-20 239C93 217 156 267 271 239s185-1 262 56 165 20 228 73 153 75 276 56', scar: 'M-28 184C103 165 155 222 268 194S447 171 523 228s166 30 230 83 153 75 298 63L1030-18H-28Z' },
+        { label: '10:25 · VERIFIED', path: 'M-20 257C94 234 153 282 271 256s186-2 266 56 168 22 233 78 154 79 274 60', scar: 'M-28 198C108 182 154 237 268 211S450 188 530 248s169 32 234 88 150 78 292 66L1030-18H-28Z' }
+      ];
+
+      const actionDetails = {
+        deconflict: {
+          title: 'Release H-07 into east orbit',
+          summary: 'Sequence H-07 behind Tanker 12 and close conflict A-42. The fireline window remains visible while command is pending.',
+          affects: 'H-07 · T-12 · A-42',
+          window: 'Closes 10:33 · 06m',
+          success: 'Airspace command transmitted. H-07 is released inbound; conflict A-42 is resolved.'
+        },
+        reserve: {
+          title: 'Commit C-19 to Juniper Saddle',
+          summary: 'Move the south reserve to DIV-C access. This changes C-19 from staged to assigned and preserves the active crew total.',
+          affects: 'C-19 · DIV-C',
+          window: 'Travel gate closes 10:35 · 08m',
+          success: 'Reserve order transmitted. C-19 is assigned to DIV-C with a 12 minute arrival.'
+        },
+        acknowledge: {
+          title: 'Acknowledge stale IR perimeter',
+          summary: 'Record that command is operating from the 10:12 verified frame. Acknowledging does not make the stale feed current.',
+          affects: 'IR perimeter · all divisions',
+          window: '14 minutes stale',
+          success: 'Stale IR frame acknowledged. The feed remains explicitly stale until a new frame arrives.'
+        }
+      };
+
+      const stateCopy = {
+        default: { icon: '•', title: 'Operational picture current', description: 'All received sources are reconciled to the last verified frame.' },
+        loading: { icon: '◌', title: 'Reading edge packets…', description: 'Last verified perimeter and resource positions remain available during sync.' },
+        empty: { icon: '◇', title: 'No new deltas', description: 'The refresh returned no newer observations; the 10:25 verified frame is retained.' },
+        error: { icon: '!', title: 'Uplink refresh failed', description: 'Remote telemetry is unavailable. Last verified values remain visible and marked by feed age.' },
+        success: { icon: '✓', title: 'Command transmitted', description: 'The operational ledger and map now reflect the acknowledged command state.' }
+      };
+
+      let selectedSector = 'DIV-C';
+      let selectedEntity = null;
+      let pendingAction = null;
+      let toastTimer = null;
+      let elapsedSeconds = 0;
+
+      const $ = (s, r = document) => r.querySelector(s);
+      const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+      const statusMarkup = (state) => `<span class="status" data-state="${state}">${state}</span>`;
+
+      function renderSectors() {
+        $('#sectorList').innerHTML = sectors.map(s => `
+          <li>
+            <button class="sector-btn" type="button" data-sector="${s.id}" aria-pressed="${s.id === selectedSector}">
+              <span class="risk-plate ${s.plateClass}">${s.glyph}</span>
+              <span class="sector-copy"><strong>DIV ${s.short} · ${s.name}</strong><span>${s.risk} · window ${s.window}</span></span>
+              <span class="sector-rate">${s.rate}<span>spread</span></span>
+            </button>
+          </li>`).join('');
+        $$('.sector-btn').forEach(btn => btn.addEventListener('click', () => selectSector(btn.dataset.sector)));
+        $$('.risk-line').forEach(path => path.classList.toggle('is-active', path.dataset.sector === selectedSector));
+      }
+
+      function selectSector(id) {
+        selectedSector = id;
+        selectedEntity = null;
+        const s = sectors.find(x => x.id === id);
+        renderSectors();
+        $$('.map-pin').forEach(pin => pin.classList.remove('is-active'));
+        $('#inspector').innerHTML = `<span class="section-code">CURRENT SELECTION</span><strong>Division ${s.short} · ${s.name}</strong><p>${s.risk} ${s.glyph} · ${s.rate} · ${s.detail}</p>`;
+        $('#srStatus').textContent = `Selected Division ${s.short}, ${s.name}, ${s.risk} risk.`;
+      }
+
+      function selectEntity(id) {
+        const entity = [...crews, ...aircraft].find(x => x.id === id);
+        if (!entity) return;
+        selectedEntity = id;
+        $$('.map-pin').forEach(pin => pin.classList.toggle('is-active', pin.dataset.entity === id));
+        $$('[data-entity-row]').forEach(row => row.setAttribute('aria-pressed', String(row.dataset.entityRow === id)));
+        $('#inspector').innerHTML = `<span class="section-code">RESOURCE SELECTION</span><strong>${entity.id} · ${entity.type}</strong><p>${entity.assignment} · ${entity.state} · ${entity.detail} · ${entity.time}</p>`;
+        $('#srStatus').textContent = `Selected ${entity.id}, ${entity.type}, state ${entity.state}.`;
+      }
+
+      function renderPins() {
+        const all = [
+          ...crews.map(c => ({ ...c, kind: 'crew', sym: 'C' })),
+          ...aircraft.map(a => ({ ...a, kind: 'air', sym: 'A' }))
+        ];
+        $('#mapPins').innerHTML = all.map(item => `
+          <button class="map-pin ${item.kind}" type="button" data-entity="${item.id}" data-state="${item.state}" style="--px:${item.x}%;--py:${item.y}%" aria-label="${item.id}, ${item.type}, ${item.state}, ${item.assignment}">
+            <span class="pin-icon"><span>${item.sym}</span></span>
+            <span class="pin-label">${item.id} · ${item.state}</span>
+          </button>`).join('');
+        $$('.map-pin').forEach(pin => pin.addEventListener('click', () => selectEntity(pin.dataset.entity)));
+      }
+
+      function renderResources() {
+        $('#crewCount').textContent = `${crews.length} UNITS`;
+        $('#aircraftCount').textContent = `${aircraft.length} SHIPS`;
+        $('#crewRows').innerHTML = crews.map(c => `
+          <tr data-state="${c.state}">
+            <td><button type="button" data-entity-row="${c.id}" aria-pressed="${selectedEntity === c.id}">${c.id}</button></td>
+            <td>${c.assignment}</td>
+            <td>${statusMarkup(c.state)}</td>
+            <td>${c.time}</td>
+          </tr>`).join('');
+        $('#aircraftRows').innerHTML = aircraft.map(a => `
+          <tr data-state="${a.state}">
+            <td><button type="button" data-entity-row="${a.id}" aria-pressed="${selectedEntity === a.id}">${a.id}</button></td>
+            <td>${a.assignment}</td>
+            <td>${statusMarkup(a.state)}</td>
+            <td>${a.time}</td>
+          </tr>`).join('');
+        $$('[data-entity-row]').forEach(btn => btn.addEventListener('click', () => selectEntity(btn.dataset.entityRow)));
+      }
+
+      function renderFeeds() {
+        $('#feedList').innerHTML = feeds.map(f => `
+          <li>
+            <div class="feed-row">
+              <div><strong>${f.id} · ${f.name}</strong><small>${f.detail}${f.acknowledged ? ' · ACKNOWLEDGED' : ''}</small></div>
+              <div class="feed-time">${statusMarkup(f.state)}<br>${f.time}</div>
+            </div>
+          </li>`).join('');
+      }
+
+      function renderConflicts() {
+        const open = conflicts.filter(x => x.status === 'OPEN').length;
+        $('#conflictCount').textContent = `${open} OPEN`;
+        $('#conflictList').innerHTML = conflicts.map(c => `
+          <li class="conflict-item ${c.status === 'RESOLVED' ? 'is-resolved' : ''}">
+            <span class="conflict-code">${c.status === 'RESOLVED' ? '✓' : c.id}</span>
+            <div><strong>${c.title}</strong><p>${c.detail}${c.status === 'RESOLVED' ? ' · RESOLVED' : ''}</p></div>
+          </li>`).join('');
+      }
+
+      function renderWindows() {
+        $('#windowList').innerHTML = windows.map(w => `
+          <li>
+            <span class="action-time">${w.time}</span>
+            <span class="window-copy"><strong>${w.title}</strong><span>${w.detail}</span></span>
+            <button class="line-btn" type="button" data-action="${w.action}">Review</button>
+          </li>`).join('');
+        $$('[data-action]', $('#windowList')).forEach(btn => btn.addEventListener('click', () => openAction(btn.dataset.action)));
+      }
+
+      function openAction(action) {
+        pendingAction = action;
+        const d = actionDetails[action];
+        $('#dialogTitle').textContent = d.title;
+        $('#dialogSummary').textContent = d.summary;
+        $('#dialogAffects').textContent = d.affects;
+        $('#dialogWindow').textContent = d.window;
+        $('#commandDialog').showModal();
+      }
+
+      function confirmAction() {
+        if (!pendingAction) return;
+        if (pendingAction === 'deconflict') {
+          const a = aircraft.find(x => x.id === 'H-07');
+          a.state = 'READY';
+          a.assignment = 'DIV-C inbound';
+          a.detail = 'Sequenced behind T-12 · corridor clear';
+          a.time = 'ETA 03m';
+          const c = conflicts.find(x => x.id === 'A-42');
+          c.status = 'RESOLVED';
+        }
+        if (pendingAction === 'reserve') {
+          const cr = crews.find(x => x.id === 'C-19');
+          cr.state = 'ON LINE';
+          cr.assignment = 'DIV-C inbound';
+          cr.detail = '17 personnel · committed to Juniper Saddle';
+          cr.time = 'ETA 12m';
+        }
+        if (pendingAction === 'acknowledge') {
+          const f = feeds.find(x => x.id === 'IR');
+          f.acknowledged = true;
+        }
+        renderResources();
+        renderPins();
+        renderFeeds();
+        renderConflicts();
+        const msg = actionDetails[pendingAction].success;
+        $('#commandDialog').close();
+        setMode('success');
+        showToast(msg);
+        $('#srStatus').textContent = msg;
+        pendingAction = null;
+      }
+
+      function showToast(msg) {
+        clearTimeout(toastTimer);
+        const t = $('#toast');
+        t.textContent = msg;
+        t.classList.add('is-visible');
+        toastTimer = setTimeout(() => t.classList.remove('is-visible'), 5200);
+      }
+
+      function setMode(mode) {
+        const s = stateCopy[mode];
+        $$('.state-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode)));
+        const banner = $('#systemState');
+        banner.dataset.kind = mode;
+        banner.classList.toggle('is-visible', mode !== 'default');
+        $('#stateTitle').textContent = s.title;
+        $('#stateDescription').textContent = s.description;
+        $('.state-icon', banner).textContent = s.icon;
+        $('#stateTime').textContent = $('#incidentClock').textContent;
+        $('#mapStage').setAttribute('aria-busy', String(mode === 'loading'));
+        $('#srStatus').textContent = `${s.title}. ${s.description}`;
+      }
+
+      function setFrame(index) {
+        const frame = frames[index];
+        const current = index === frames.length - 1;
+        $('#fireHalo').setAttribute('d', frame.path);
+        $('#fireFront').setAttribute('d', frame.path);
+        $('#burnScar').setAttribute('d', frame.scar);
+        $('#timeReadout').textContent = frame.label;
+        $('#riskLines').style.opacity = current ? '1' : '.2';
+        $('#projectionPath').style.opacity = current ? '.5' : '.14';
+        $('#fireTrail').setAttribute('d', frames[2].path);
+        $('#fireTrail').style.opacity = current ? '0' : '.4';
+        $('#srStatus').textContent = current
+          ? 'Showing the current verified fireline at 10:25.'
+          : `Showing archived fireline ${frame.label}. Current line remains visible as a faint dotted reference.`;
+      }
+
+      function updateClock() {
+        elapsedSeconds += 1;
+        const base = (10 * 3600) + (26 * 60) + 41 + elapsedSeconds;
+        const h = Math.floor(base / 3600) % 24;
+        const m = Math.floor((base % 3600) / 60);
+        const s = base % 60;
+        $('#incidentClock').textContent = [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+        const remaining = Math.max(0, (6 * 60 + 18) - elapsedSeconds);
+        $('#criticalCountdown').textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+      }
+
+      renderSectors();
+      renderPins();
+      renderResources();
+      renderFeeds();
+      renderConflicts();
+      renderWindows();
+
+      $$('.state-btn').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+      $$('[data-action]', $('#criticalActions')).forEach(btn => btn.addEventListener('click', () => openAction(btn.dataset.action)));
+      $$('[data-action]', $('.decision-pulse')).forEach(btn => btn.addEventListener('click', () => openAction(btn.dataset.action)));
+
+      $$('.risk-line').forEach(path => {
+        path.addEventListener('click', () => selectSector(path.dataset.sector));
+        path.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSector(path.dataset.sector); }
+        });
+      });
+
+      $('#windToggle').addEventListener('click', e => {
+        const pressed = e.currentTarget.getAttribute('aria-pressed') === 'true';
+        e.currentTarget.setAttribute('aria-pressed', String(!pressed));
+        e.currentTarget.textContent = pressed ? 'Wind off' : 'Wind on';
+        $('#windGroup').classList.toggle('is-hidden', pressed);
+      });
+
+      $('#timeSlider').addEventListener('input', e => setFrame(Number(e.target.value)));
+      $('#returnLive').addEventListener('click', () => {
+        $('#timeSlider').value = '2';
+        setFrame(2);
+      });
+
+      $('#dialogClose').addEventListener('click', () => $('#commandDialog').close());
+      $('#dialogCancel').addEventListener('click', () => $('#commandDialog').close());
+      $('#dialogConfirm').addEventListener('click', confirmAction);
+      $('#commandDialog').addEventListener('close', () => { pendingAction = null; });
+
+      setInterval(updateClock, 1000);
+    })();
+  </script>
+</body>
+</html>

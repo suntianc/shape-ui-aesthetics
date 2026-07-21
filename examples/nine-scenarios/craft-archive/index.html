@@ -1,0 +1,1701 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Common Thread — Local Craft Archive</title>
+  <style>
+    :root {
+      --ground: #f2efe8;
+      --surface: #faf8f3;
+      --surface-strong: #ffffff;
+      --ink: #13161a;
+      --muted: #5a6062;
+      --quiet: #82878a;
+      --line: #cbc9c1;
+      --line-strong: #737775;
+      --mineral: #22505a;
+      --mineral-soft: #d5e4e7;
+      --umber: #8c4a2a;
+      --umber-soft: #f1e0d5;
+      --flax: #e8e2d0;
+      --flax-deep: #d4ccb5;
+      --verdigris: #3a7d6e;
+      --verdigris-soft: #d4ede6;
+      --cobalt: #3059a6;
+      --cobalt-soft: #dde7f5;
+      --warning: #8a5a04;
+      --warning-soft: #fff0d0;
+      --danger: #8e2a25;
+      --danger-soft: #f8e2df;
+      --focus: #1555d0;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Iowan Old Style, Baskerville, "Times New Roman", serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --shadow: 0 20px 55px rgba(19, 22, 26, .14);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      min-width: 280px;
+      background: var(--ground);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.45;
+    }
+
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+
+    button:focus-visible, input:focus-visible, select:focus-visible,
+    a:focus-visible, dialog:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    a { color: inherit; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 1000;
+      top: .75rem;
+      left: .75rem;
+      padding: .75rem 1rem;
+      color: white;
+      background: var(--focus);
+      font-weight: 800;
+      transform: translateY(-180%);
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .shell {
+      width: min(100%, 1680px);
+      margin: 0 auto;
+      padding-inline: clamp(.85rem, 3vw, 3.25rem);
+    }
+
+    /* ── Masthead ── */
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(18rem, .7fr);
+      gap: clamp(1.5rem, 6vw, 7rem);
+      align-items: end;
+      min-height: 18rem;
+      padding-block: clamp(2rem, 6vw, 5.5rem) 2rem;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .kicker, .section-label, .field-label, .card-code, .fact-kind,
+    .micro, .timeline-date, .source-id, .state-label {
+      font-family: var(--mono);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .kicker {
+      display: flex;
+      gap: .65rem;
+      align-items: center;
+      color: var(--mineral);
+    }
+    .kicker::before {
+      width: 2.5rem;
+      height: 3px;
+      background: var(--umber);
+      content: "";
+    }
+
+    h1 {
+      max-width: 12ch;
+      margin: .6rem 0 .85rem;
+      font-family: var(--serif);
+      font-size: clamp(3.4rem, 10vw, 9.2rem);
+      font-weight: 500;
+      letter-spacing: -.075em;
+      line-height: .76;
+    }
+
+    h1 span {
+      display: block;
+      margin-left: clamp(1.6rem, 7vw, 8rem);
+      color: var(--umber);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .lede {
+      max-width: 62ch;
+      margin: 1.35rem 0 0;
+      color: #3d4344;
+      font-size: clamp(.95rem, 1.2vw, 1.12rem);
+    }
+
+    .thesis-note {
+      display: grid;
+      gap: 1.1rem;
+      align-self: stretch;
+      padding: 1.1rem 0 0 clamp(1rem, 3vw, 2.5rem);
+      border-left: 1px solid var(--line-strong);
+    }
+    .thesis-note p {
+      max-width: 36ch;
+      margin: 0;
+      color: var(--muted);
+      font-size: .84rem;
+    }
+    .thesis-note strong { color: var(--ink); }
+
+    .dataset-control {
+      display: grid;
+      gap: .45rem;
+      align-self: end;
+    }
+    .dataset-control select {
+      min-height: 2.9rem;
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      border-radius: 0;
+      padding: .6rem 2.25rem .6rem .75rem;
+      color: var(--ink);
+      background: var(--surface);
+    }
+
+    /* ── Search bench ── */
+    .archive-main { padding-bottom: 6rem; }
+
+    .search-bench {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(16rem, 1.55fr) repeat(5, minmax(8rem, .62fr)) auto;
+      gap: 1px;
+      margin-top: 1.25rem;
+      border: 1px solid var(--line-strong);
+      background: var(--line);
+    }
+
+    .field {
+      position: relative;
+      min-width: 0;
+      padding: .62rem .7rem .7rem;
+      background: var(--surface);
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: .32rem;
+      color: var(--quiet);
+    }
+
+    .field input, .field select {
+      width: 100%;
+      min-height: 2.35rem;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      padding: .3rem 0;
+      color: var(--ink);
+      background: transparent;
+      font-weight: 670;
+    }
+
+    .field input::placeholder {
+      color: #7e827e;
+      font-weight: 500;
+    }
+
+    .search-field input { padding-right: 4.4rem; }
+
+    .key-hint {
+      position: absolute;
+      right: .75rem;
+      bottom: 1.18rem;
+      color: var(--quiet);
+      font-family: var(--mono);
+      font-size: .68rem;
+      pointer-events: none;
+    }
+
+    .clear-button {
+      min-height: 100%;
+      border: 0;
+      padding: .75rem 1rem;
+      color: var(--ink);
+      background: var(--surface);
+      font-family: var(--mono);
+      font-size: .7rem;
+      font-weight: 760;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .clear-button:hover { background: var(--cobalt-soft); }
+
+    /* ── Filter state bar ── */
+    .filter-state {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: start;
+      min-height: 3.5rem;
+      padding: .75rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .active-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem;
+      align-items: center;
+    }
+    .active-filters:empty::before {
+      color: var(--quiet);
+      content: "All evidence threads are visible.";
+      font-size: .79rem;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      gap: .4rem;
+      align-items: center;
+      min-height: 2rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 2rem;
+      padding: .25rem .62rem;
+      color: var(--ink);
+      background: var(--surface-strong);
+      font-size: .73rem;
+    }
+    .filter-chip span { color: var(--muted); }
+
+    .result-status {
+      display: inline-flex;
+      gap: .45rem;
+      align-items: center;
+      min-height: 2rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .7rem;
+      white-space: nowrap;
+    }
+    .result-status::before {
+      width: .55rem;
+      height: .55rem;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      content: "";
+    }
+    .result-status[data-kind="ready"] { color: var(--mineral); }
+    .result-status[data-kind="loading"] { color: var(--cobalt); }
+    .result-status[data-kind="error"] { color: var(--danger); }
+
+    /* ── Chronology ── */
+    .chronology {
+      display: grid;
+      grid-template-columns: minmax(12rem, .32fr) minmax(0, 1fr);
+      gap: clamp(1.2rem, 4vw, 4.5rem);
+      padding: clamp(2rem, 5vw, 4rem) 0;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .chronology-copy h2, .collection-head h2, .protocol-copy h2 {
+      margin: .35rem 0 .7rem;
+      font-family: var(--serif);
+      font-size: clamp(1.9rem, 3.3vw, 3.5rem);
+      font-weight: 500;
+      letter-spacing: -.04em;
+      line-height: .96;
+    }
+
+    .chronology-copy p, .collection-head p, .protocol-copy p {
+      max-width: 48ch;
+      margin: 0;
+      color: var(--muted);
+      font-size: .84rem;
+    }
+
+    .timeline-scroll {
+      overflow-x: auto;
+      padding: .4rem .2rem .7rem;
+      scrollbar-color: var(--line-strong) transparent;
+    }
+
+    .timeline {
+      position: relative;
+      min-width: 830px;
+      height: 21.5rem;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline::before {
+      position: absolute;
+      right: 1.2rem;
+      bottom: 3rem;
+      left: 1.2rem;
+      height: 2px;
+      background: var(--line-strong);
+      content: "";
+    }
+
+    .timeline-era {
+      position: absolute;
+      bottom: .55rem;
+      color: var(--quiet);
+      font-family: var(--mono);
+      font-size: .62rem;
+    }
+
+    .timeline-marker {
+      position: absolute;
+      bottom: 3.05rem;
+      width: 1rem;
+      height: 1rem;
+      border: 3px solid var(--surface-strong);
+      border-radius: 50%;
+      padding: 0;
+      background: var(--mineral);
+      box-shadow: 0 0 0 1px var(--mineral);
+      transform: translate(-50%, 50%);
+    }
+    .timeline-marker::before {
+      position: absolute;
+      bottom: .45rem;
+      left: 50%;
+      width: 1px;
+      height: var(--stem, 3.4rem);
+      background: var(--line-strong);
+      content: "";
+    }
+    .timeline-marker::after {
+      position: absolute;
+      bottom: calc(var(--stem, 3.4rem) + .25rem);
+      left: 50%;
+      width: 8rem;
+      color: var(--ink);
+      content: attr(data-label);
+      font-family: var(--sans);
+      font-size: .69rem;
+      font-weight: 700;
+      line-height: 1.22;
+      text-align: left;
+      transform: translateX(-.1rem);
+    }
+    .timeline-marker.align-left::after {
+      text-align: right;
+      transform: translateX(calc(-100% + .1rem));
+    }
+    .timeline-marker:hover, .timeline-marker:focus-visible {
+      background: var(--cobalt);
+    }
+    .timeline-marker[aria-current="true"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      background: var(--cobalt);
+      box-shadow: 0 0 0 4px var(--cobalt-soft);
+    }
+
+    /* ── Collection ── */
+    .collection { padding-top: clamp(2.2rem, 5vw, 4.4rem); }
+
+    .collection-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(17rem, .52fr);
+      gap: 2rem;
+      align-items: end;
+      margin-bottom: 1.4rem;
+    }
+    .collection-explainer {
+      justify-self: end;
+      padding-left: 1.15rem;
+      border-left: 3px solid var(--umber);
+    }
+
+    .records {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line-strong);
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .record-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(12rem, .88fr) minmax(14rem, 1.12fr);
+      min-height: 26rem;
+      border-right: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      background: var(--surface);
+    }
+    .record-card::before {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 4px;
+      background: var(--umber);
+      content: "";
+      transition: width 260ms ease;
+    }
+    .record-card:hover::before, .record-card:focus-within::before { width: 100%; }
+
+    .mechanism-figure {
+      position: relative;
+      display: grid;
+      min-height: 100%;
+      margin: 0;
+      place-items: center;
+      overflow: hidden;
+      border-right: 1px solid var(--line);
+      color: var(--material-color, var(--mineral));
+      background: var(--material-ground, #e7ebe5);
+    }
+    .mechanism-figure svg {
+      width: 78%;
+      height: auto;
+      filter: drop-shadow(0 12px 20px rgba(21, 26, 24, .08));
+    }
+    .mechanism-figure figcaption {
+      position: absolute;
+      right: .7rem;
+      bottom: .7rem;
+      left: .7rem;
+      color: #3d4541;
+      font-family: var(--mono);
+      font-size: .58rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .missing-visual {
+      display: grid;
+      width: calc(100% - 2rem);
+      min-height: 12rem;
+      border: 1px dashed var(--line-strong);
+      padding: 1.2rem;
+      place-items: center;
+      text-align: center;
+    }
+    .missing-visual strong {
+      display: block;
+      margin-bottom: .35rem;
+      font-family: var(--serif);
+      font-size: 1.3rem;
+      font-weight: 500;
+    }
+    .missing-visual span {
+      max-width: 24ch;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .record-body {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      padding: clamp(1rem, 2vw, 1.5rem);
+    }
+
+    .card-topline {
+      display: flex;
+      gap: .8rem;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .card-code { color: var(--quiet); }
+
+    .evidence-state {
+      display: inline-flex;
+      gap: .35rem;
+      align-items: center;
+      color: var(--mineral);
+      font-family: var(--mono);
+      font-size: .61rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .evidence-state::before {
+      width: .42rem;
+      height: .42rem;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+    .evidence-state.missing { color: var(--warning); }
+
+    .record-body h3 {
+      max-width: 17ch;
+      margin: 1rem 0 .55rem;
+      font-family: var(--serif);
+      font-size: clamp(1.65rem, 2.4vw, 2.45rem);
+      font-weight: 500;
+      letter-spacing: -.035em;
+      line-height: .98;
+    }
+
+    .maker-line {
+      margin: 0 0 1.25rem;
+      color: var(--muted);
+      font-size: .79rem;
+    }
+    .maker-line strong { color: var(--ink); }
+
+    .making-chain {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: .35rem;
+      align-items: center;
+      margin: auto 0 1.2rem;
+      padding: .8rem 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .chain-step span {
+      display: block;
+      color: var(--quiet);
+      font-family: var(--mono);
+      font-size: .56rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .chain-step strong {
+      display: block;
+      margin-top: .2rem;
+      font-size: .68rem;
+      font-weight: 720;
+      overflow-wrap: anywhere;
+    }
+
+    .chain-arrow {
+      color: var(--umber);
+      font-size: .85rem;
+    }
+
+    .record-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .65rem 1rem;
+      margin: 0 0 1.15rem;
+    }
+    .record-meta div { min-width: 0; }
+    .record-meta dt {
+      color: var(--quiet);
+      font-family: var(--mono);
+      font-size: .56rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .record-meta dd {
+      margin: .16rem 0 0;
+      font-size: .72rem;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .open-record {
+      display: inline-flex;
+      gap: .7rem;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 2.85rem;
+      border: 1px solid var(--ink);
+      padding: .55rem .75rem;
+      color: var(--ink);
+      background: transparent;
+      font-size: .75rem;
+      font-weight: 760;
+      text-align: left;
+    }
+    .open-record::after {
+      color: var(--umber);
+      content: "↗";
+      font-size: 1rem;
+    }
+    .open-record:hover {
+      color: white;
+      background: var(--ink);
+    }
+
+    /* ── State panels ── */
+    .state-panel {
+      display: grid;
+      min-height: 26rem;
+      border: 1px solid var(--line-strong);
+      padding: clamp(1.25rem, 5vw, 4rem);
+      place-items: center;
+      background: var(--surface);
+      text-align: center;
+    }
+    .state-panel > div { max-width: 36rem; }
+    .state-panel .state-mark {
+      display: grid;
+      width: 4.2rem;
+      height: 4.2rem;
+      margin: 0 auto 1.3rem;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      place-items: center;
+      color: var(--umber);
+      font-family: var(--serif);
+      font-size: 2rem;
+    }
+    .state-panel h3 {
+      margin: 0 0 .6rem;
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 500;
+      letter-spacing: -.035em;
+    }
+    .state-panel p {
+      margin: 0 auto 1.2rem;
+      color: var(--muted);
+    }
+
+    .state-action, .detail-action, .related-button,
+    .dialog-close, .dialog-nav button {
+      min-height: 2.75rem;
+      border: 1px solid var(--ink);
+      padding: .55rem .8rem;
+      color: var(--ink);
+      background: var(--surface-strong);
+      font-size: .75rem;
+      font-weight: 750;
+    }
+    .state-action:hover, .detail-action:hover, .related-button:hover,
+    .dialog-close:hover, .dialog-nav button:hover {
+      color: white;
+      background: var(--ink);
+    }
+
+    /* ── Skeleton / loading ── */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line-strong);
+      border-left: 1px solid var(--line-strong);
+    }
+    .skeleton {
+      min-height: 24rem;
+      border-right: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      background:
+        linear-gradient(90deg, transparent 0, rgba(255,255,255,.65) 45%, transparent 72%) -120% 0 / 55% 100% no-repeat,
+        linear-gradient(90deg, #dde0da 38%, transparent 38%) 1.1rem 2rem / calc(100% - 2.2rem) 1rem no-repeat,
+        linear-gradient(90deg, #d2d6cf 72%, transparent 72%) 1.1rem 4.5rem / calc(100% - 2.2rem) 2.8rem no-repeat,
+        linear-gradient(90deg, #dfe2dc 100%, transparent 100%) 1.1rem 9rem / calc(100% - 2.2rem) 10rem no-repeat,
+        var(--surface);
+      animation: scan 1.25s ease-in-out infinite;
+    }
+    @keyframes scan {
+      to { background-position: 220% 0, 1.1rem 2rem, 1.1rem 4.5rem, 1.1rem 9rem, 0 0; }
+    }
+
+    /* ── Protocol ── */
+    .protocol {
+      display: grid;
+      grid-template-columns: minmax(16rem, .45fr) minmax(0, 1fr);
+      gap: clamp(1.5rem, 5vw, 5rem);
+      margin-top: clamp(3rem, 8vw, 7rem);
+      padding-top: 2rem;
+      border-top: 4px solid var(--ink);
+    }
+    .protocol-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--line-strong);
+      border-left: 1px solid var(--line-strong);
+    }
+    .protocol-item {
+      min-height: 12rem;
+      border-right: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      padding: 1rem;
+      background: var(--surface);
+    }
+    .protocol-item strong {
+      display: block;
+      margin: .55rem 0 .5rem;
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-weight: 500;
+      line-height: 1.05;
+    }
+    .protocol-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .73rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      margin-top: 3rem;
+      padding: 1rem 0 2rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .7rem;
+    }
+
+    /* ── Dialog ── */
+    dialog {
+      width: min(94vw, 1120px);
+      max-height: min(92vh, 920px);
+      border: 1px solid var(--ink);
+      padding: 0;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    dialog::backdrop { background: rgba(18, 22, 20, .7); }
+
+    .dialog-shell { display: grid; grid-template-columns: minmax(16rem, .85fr) minmax(0, 1.15fr); }
+
+    .dialog-visual {
+      position: sticky;
+      top: 0;
+      display: grid;
+      min-height: 36rem;
+      height: 100%;
+      place-items: center;
+      color: var(--material-color, var(--mineral));
+      background: var(--material-ground, #e7ebe5);
+    }
+    .dialog-visual svg { width: min(76%, 25rem); height: auto; }
+    .dialog-visual .missing-visual { width: calc(100% - 3rem); }
+
+    .dialog-content { min-width: 0; padding: clamp(1rem, 4vw, 2.5rem); }
+
+    .dialog-top {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+    .dialog-close {
+      flex: 0 0 auto;
+      width: 2.8rem;
+      padding: 0;
+      font-size: 1.1rem;
+    }
+
+    .dialog-content h2 {
+      max-width: 16ch;
+      margin: .6rem 0 .55rem;
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 5vw, 4.7rem);
+      font-weight: 500;
+      letter-spacing: -.055em;
+      line-height: .89;
+    }
+
+    .dialog-maker {
+      margin: 0;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .detail-facts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: 2rem 0;
+      border-top: 1px solid var(--line-strong);
+      border-left: 1px solid var(--line-strong);
+    }
+    .detail-fact {
+      min-height: 5.5rem;
+      border-right: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      padding: .75rem;
+    }
+    .detail-fact dd {
+      margin: .28rem 0 0;
+      font-size: .78rem;
+      font-weight: 680;
+    }
+
+    .evidence-section { margin-top: 1.8rem; }
+    .evidence-section h3 {
+      margin: .35rem 0 .65rem;
+      font-family: var(--serif);
+      font-size: 1.65rem;
+      font-weight: 500;
+    }
+    .evidence-section p {
+      margin: 0;
+      color: #3d4344;
+      font-size: .84rem;
+    }
+
+    .boundary-box {
+      margin-top: 1.5rem;
+      border-left: 4px solid var(--umber);
+      padding: 1rem;
+      background: #f0ece3;
+    }
+    .boundary-box strong {
+      display: block;
+      margin-bottom: .35rem;
+      font-family: var(--mono);
+      font-size: .68rem;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .boundary-box p { font-size: .79rem; }
+
+    .trace-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      margin-top: 1.5rem;
+    }
+    .detail-action { border-color: var(--umber); color: var(--umber); }
+
+    .source-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.8rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+    }
+    .source-row a { color: var(--cobalt); font-weight: 760; }
+
+    .related-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .5rem;
+      margin-top: .8rem;
+    }
+    .related-button { text-align: left; }
+
+    .dialog-nav {
+      display: flex;
+      gap: .5rem;
+      justify-content: flex-end;
+      margin-top: 1.8rem;
+    }
+
+    .live-region {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1260px) {
+      .search-bench { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .search-field { grid-column: span 3; }
+      .field:not(.search-field) { grid-column: span 1; }
+      .clear-button { grid-column: span 3; min-height: 3.3rem; }
+      .records { grid-template-columns: 1fr; }
+      .record-card { min-height: 23rem; grid-template-columns: minmax(14rem, .7fr) minmax(0, 1.3fr); }
+    }
+
+    @media (max-width: 860px) {
+      .masthead { grid-template-columns: 1fr; min-height: 0; }
+      .thesis-note { padding-left: 1rem; }
+      .search-bench { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .search-field { grid-column: 1 / -1; }
+      .field:not(.search-field) { grid-column: span 1; }
+      .clear-button { grid-column: 1 / -1; min-height: 3.2rem; }
+      .chronology, .protocol { grid-template-columns: 1fr; }
+      .collection-head { grid-template-columns: 1fr; }
+      .collection-explainer { justify-self: start; }
+      .protocol-grid { grid-template-columns: 1fr; }
+      .protocol-item { min-height: 8rem; }
+      .dialog-shell { grid-template-columns: 1fr; }
+      .dialog-visual { position: relative; min-height: 18rem; }
+    }
+
+    @media (max-width: 620px) {
+      h1 { font-size: clamp(3.5rem, 23vw, 6rem); }
+      h1 span { margin-left: 1.1rem; }
+      .filter-state { grid-template-columns: 1fr; }
+      .result-status { white-space: normal; }
+      .record-card { grid-template-columns: 1fr; }
+      .mechanism-figure { min-height: 16rem; border-right: 0; border-bottom: 1px solid var(--line); }
+      .record-body h3 { max-width: 22ch; }
+      .skeleton-grid { grid-template-columns: 1fr; }
+      .detail-facts, .related-list { grid-template-columns: 1fr; }
+      footer { flex-direction: column; }
+    }
+
+    @media (max-width: 420px) {
+      .search-bench { grid-template-columns: 1fr; }
+      .search-field, .field:not(.search-field), .clear-button { grid-column: 1; }
+      .making-chain { grid-template-columns: 1fr; }
+      .chain-arrow { transform: rotate(90deg); }
+      dialog { width: 100vw; max-height: 100dvh; height: 100dvh; border: 0; }
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+      }
+      .skeleton { animation: none; }
+    }
+
+    /* ── Forced colors ── */
+    @media (forced-colors: active) {
+      .record-card::before, .kicker::before,
+      .result-status::before, .evidence-state::before { background: CanvasText; }
+      .mechanism-figure, .dialog-visual { forced-color-adjust: auto; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#archive-controls">Skip to archive search</a>
+
+  <header class="shell masthead">
+    <div>
+      <div class="kicker">Local craft archive · evidence-led demo</div>
+      <h1>Common <span>Thread</span></h1>
+      <p class="lede">Eight collection records are arranged by what can be verified: when an object was made, where its record places it, who is named, which materials remain, and how those materials were worked.</p>
+    </div>
+    <aside class="thesis-note" aria-label="Archive approach">
+      <p><strong>Follow the making.</strong> Filtering is not a cosmetic layer: each choice tightens the visible thread between material, action, maker, place, and time.</p>
+      <p>Structure studies are diagrams, not replicas. No patina, simulated wear, or symbolic interpretation is used as a shortcut to "craft."</p>
+      <label class="dataset-control" for="dataset-state">
+        <span class="state-label">Dataset state · evaluation control</span>
+        <select id="dataset-state">
+          <option value="ready">Ready · local records</option>
+          <option value="loading">Loading · awaiting records</option>
+          <option value="error">Error · source unavailable</option>
+        </select>
+      </label>
+    </aside>
+  </header>
+
+  <main id="main-content" class="shell archive-main">
+    <section id="archive-controls" class="search-bench" aria-label="Search and filter archive">
+      <label class="field search-field" for="search-input">
+        <span class="field-label">Search every recorded field</span>
+        <input id="search-input" type="search" autocomplete="off" placeholder="Try bamboo, Riria Smith, inlay…">
+        <span class="key-hint" aria-hidden="true">/ search</span>
+      </label>
+      <label class="field" for="period-filter">
+        <span class="field-label">Period</span>
+        <select id="period-filter" data-filter="period"><option value="">All periods</option></select>
+      </label>
+      <label class="field" for="region-filter">
+        <span class="field-label">Region</span>
+        <select id="region-filter" data-filter="region"><option value="">All regions</option></select>
+      </label>
+      <label class="field" for="material-filter">
+        <span class="field-label">Material</span>
+        <select id="material-filter" data-filter="material"><option value="">All materials</option></select>
+      </label>
+      <label class="field" for="maker-filter">
+        <span class="field-label">Maker</span>
+        <select id="maker-filter" data-filter="maker"><option value="">All makers</option></select>
+      </label>
+      <label class="field" for="technique-filter">
+        <span class="field-label">Technique</span>
+        <select id="technique-filter" data-filter="technique"><option value="">All techniques</option></select>
+      </label>
+      <button class="clear-button" id="clear-filters" type="button">Clear thread</button>
+    </section>
+
+    <div class="filter-state">
+      <div class="active-filters" id="active-filters" aria-label="Active filters"></div>
+      <div class="result-status" id="result-status" data-kind="ready">Preparing local records</div>
+    </div>
+
+    <section class="chronology" aria-labelledby="chronology-title">
+      <div class="chronology-copy">
+        <div class="section-label">Time / 01</div>
+        <h2 id="chronology-title">The record has a position.</h2>
+        <p>Time is a working coordinate, not an ornamental date stamp. Choose a marker to open the corresponding record; filtering redraws the chronology around the surviving evidence.</p>
+      </div>
+      <div class="timeline-scroll" tabindex="0" aria-label="Scrollable craft chronology">
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+
+    <section class="collection" aria-labelledby="collection-title">
+      <div class="collection-head">
+        <div>
+          <div class="section-label">Evidence set / 02</div>
+          <h2 id="collection-title">Material becomes method.</h2>
+        </div>
+        <p class="collection-explainer">Each card exposes a three-part making chain. Open a record to inspect source attribution, cultural boundaries, and related methods without losing the current filter state.</p>
+      </div>
+      <div id="records" class="records" aria-live="polite" aria-busy="false"></div>
+    </section>
+
+    <section class="protocol" aria-labelledby="protocol-title">
+      <div class="protocol-copy">
+        <div class="section-label">Fact protocol / 03</div>
+        <h2 id="protocol-title">What the archive refuses to guess.</h2>
+        <p>Collection metadata can be precise and still incomplete. The interface keeps that incompleteness visible instead of turning it into atmosphere.</p>
+      </div>
+      <div class="protocol-grid">
+        <article class="protocol-item">
+          <span class="micro">01 · Attribution</span>
+          <strong>Unknown stays unknown.</strong>
+          <p>"Maker unrecorded" is a first-class value. It is searchable, filterable, and never replaced with a speculative identity.</p>
+        </article>
+        <article class="protocol-item">
+          <span class="micro">02 · Meaning</span>
+          <strong>Interpretation is attributed.</strong>
+          <p>This demo uses object facts from named museum records. It does not infer universal color, motif, spiritual, or community meanings.</p>
+        </article>
+        <article class="protocol-item">
+          <span class="micro">03 · Images</span>
+          <strong>Absence does not erase evidence.</strong>
+          <p>An unavailable image remains a named state; maker, material, technique, date, place, source, and limitations remain usable.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      <span>Offline artifact · no external fonts, scripts, libraries, or image requests.</span>
+      <span>Source links are citations, not runtime dependencies.</span>
+    </footer>
+  </main>
+
+  <dialog id="record-dialog" aria-labelledby="dialog-title">
+    <div id="dialog-body"></div>
+  </dialog>
+
+  <div id="live-region" class="live-region" aria-live="polite" aria-atomic="true"></div>
+
+  <noscript>
+    <div class="shell state-panel"><div><h2>JavaScript is required for archive filtering.</h2><p>The artifact contains no network dependencies, but interactive search and record detail require local scripting.</p></div></div>
+  </noscript>
+
+  <script>
+    const records = [
+      {
+        id: "korea-peony-box",
+        code: "CT–1550–KR",
+        title: "Box with peony scrolls",
+        timelineLabel: "Peony-scroll box",
+        date: "15th–16th century",
+        year: 1550,
+        period: "Before 1800",
+        region: "East Asia",
+        place: "Korea",
+        maker: "Maker unrecorded",
+        material: "Lacquer & shell",
+        materials: ["lacquer", "mother-of-pearl"],
+        technique: "Inlay",
+        techniques: ["mother-of-pearl inlay", "lacquer"],
+        materialStep: "Lacquer + shell",
+        actionStep: "Inlay",
+        resultStep: "Covered box",
+        source: "The Metropolitan Museum of Art",
+        sourceId: "2015.500.3.2a, b",
+        sourceUrl: "https://www.metmuseum.org/en/art/collection/search/40499",
+        fact: "The Met dates this small covered box to the 15th–16th century and records its medium as lacquer inlaid with mother-of-pearl. Its catalog description notes larger pieces of pearl shell and greater negative space in early Joseon lacquer.",
+        boundary: "The collection record does not name an individual maker. \"Peony scrolls\" is retained as the catalog description; this archive adds no symbolic reading of the motif.",
+        visual: "inlay",
+        imageStatus: "study",
+        materialColor: "#586d70",
+        materialGround: "#dce6e5"
+      },
+      {
+        id: "dine-wearing-blanket",
+        code: "CT–1865–US",
+        title: "Diné / Navajo wearing blanket",
+        timelineLabel: "Wearing blanket",
+        date: "1860–70",
+        year: 1865,
+        period: "1800–1899",
+        region: "North America",
+        place: "Arizona or New Mexico, United States",
+        maker: "Maker unrecorded",
+        material: "Wool",
+        materials: ["wool"],
+        technique: "Weaving",
+        techniques: ["woven textile"],
+        materialStep: "Wool",
+        actionStep: "Weave",
+        resultStep: "Wearing blanket",
+        source: "The Metropolitan Museum of Art",
+        sourceId: "1979.206.1039",
+        sourceUrl: "https://www.metmuseum.org/art/collection/search/313232",
+        fact: "The Met records this wool wearing blanket as Navajo, made in Arizona or New Mexico, and dates it to 1860–70. The source classifies it as a woven textile.",
+        boundary: "The source record's catalog term is \"Navajo.\" The interface pairs Diné / Navajo for findability but does not infer the maker, the meaning of its pattern, or community-specific use beyond the cited record.",
+        visual: "weave",
+        imageStatus: "study",
+        materialColor: "#9a3e2a",
+        materialGround: "#eaded5"
+      },
+      {
+        id: "ainu-attus-coat",
+        code: "CT–1869–JP",
+        title: "Ainu attus coat",
+        timelineLabel: "Attus coat",
+        date: "1865–72",
+        year: 1869,
+        period: "1800–1899",
+        region: "East Asia",
+        place: "Japan",
+        maker: "Maker unrecorded",
+        material: "Bark fibre & cotton",
+        materials: ["bark fibre", "cotton"],
+        technique: "Cross-weaving",
+        techniques: ["cross-weaving", "appliqué", "embroidery"],
+        materialStep: "Bark + cotton",
+        actionStep: "Weave + appliqué",
+        resultStep: "Coat",
+        source: "The British Museum",
+        sourceId: "As.8100",
+        sourceUrl: "https://www.britishmuseum.org/collection/object/A_As-8100",
+        fact: "The British Museum dates this attus coat to 1865–72 and describes cross-woven narrow strips of bark fibre with cotton borders, appliqué, and embroidery. The catalog records it as made by Ainu people in Japan.",
+        boundary: "The individual maker is not named. The object image is unavailable in this offline record, and the interface does not reconstruct it from the written description.",
+        visual: "missing",
+        imageStatus: "missing",
+        materialColor: "#6f684d",
+        materialGround: "#e9e5d7"
+      },
+      {
+        id: "asante-dance-wrapper",
+        code: "CT–1930–GH",
+        title: "Asante dance wrapper",
+        timelineLabel: "16-strip wrapper",
+        date: "Early to mid-20th century",
+        year: 1930,
+        period: "1900–1969",
+        region: "West Africa",
+        place: "Bonwire, Ghana",
+        maker: "Asante artist",
+        material: "Silk",
+        materials: ["silk", "synthetic dye"],
+        technique: "Strip weaving",
+        techniques: ["narrow-strip weaving", "sewing"],
+        materialStep: "Silk",
+        actionStep: "Strip weave + join",
+        resultStep: "16-strip wrapper",
+        source: "Smithsonian National Museum of African Art",
+        sourceId: "EJ10578",
+        sourceUrl: "https://africa.si.edu/collection/object/nmafa_EJ10578",
+        fact: "The Smithsonian records this silk wrapper as the work of an Asante artist in Bonwire, Ghana, from the early to mid-20th century. Its description identifies sixteen joined strips with repeating patterns.",
+        boundary: "The source contains interpretation of the cloth's title and motifs. This compact archive limits itself to maker, place, date, material, construction, and source attribution; it does not generalize motif or color meanings.",
+        visual: "strips",
+        imageStatus: "study",
+        materialColor: "#315fa8",
+        materialGround: "#e0e7f3"
+      },
+      {
+        id: "shokosai-flower-basket",
+        code: "CT–1965–JP",
+        title: "Flower basket with wide opening",
+        timelineLabel: "Wide-opening basket",
+        date: "1965",
+        year: 1965,
+        period: "1900–1969",
+        region: "East Asia",
+        place: "Japan",
+        maker: "Hayakawa Shōkosai V",
+        material: "Bamboo & rattan",
+        materials: ["timber bamboo", "rattan"],
+        technique: "Plaiting",
+        techniques: ["intersecting-circles plaiting", "shippō-ami"],
+        materialStep: "Bamboo + rattan",
+        actionStep: "Shippō-ami plait",
+        resultStep: "Flower basket",
+        source: "The Metropolitan Museum of Art",
+        sourceId: "2019.424.8a, b",
+        sourceUrl: "https://www.metmuseum.org/art/collection/search/706900",
+        fact: "The Met records this 1965 flower basket by Hayakawa Shōkosai V in timber bamboo and rattan. Its unusually wide opening is made with intersecting-circles plaiting (shippō-ami).",
+        boundary: "The structure study diagrams the recorded intersecting-circle mechanism only. It is not a likeness of the object and makes no symbolic claim about the pattern.",
+        visual: "lattice",
+        imageStatus: "study",
+        materialColor: "#80652d",
+        materialGround: "#ebe3ca"
+      },
+      {
+        id: "lucy-lewis-jar",
+        code: "CT–1980–US",
+        title: "Acoma Pueblo jar",
+        timelineLabel: "Coiled jar",
+        date: "1970–90",
+        year: 1980,
+        period: "1970–now",
+        region: "North America",
+        place: "Acoma Pueblo, New Mexico, United States",
+        maker: "Lucy M. Lewis",
+        material: "Clay",
+        materials: ["pottery", "clay slip", "paint"],
+        technique: "Coiling",
+        techniques: ["coiled", "hand built", "slipped", "painted"],
+        materialStep: "Clay + slip",
+        actionStep: "Coil + hand build",
+        resultStep: "Jar",
+        source: "Smithsonian National Museum of the American Indian",
+        sourceId: "26/6093",
+        sourceUrl: "https://americanindian.si.edu/collections-search/object/NMAI_282320",
+        fact: "The Smithsonian records this jar by Lucy M. Lewis, Acoma Pueblo, as made between 1970 and 1990. Catalog techniques are coiled/hand built, slipped, and painted; materials are pottery, clay slip, and paint.",
+        boundary: "The archive transcribes maker, community, place, materials, technique, dimensions, and date from the record. It does not assign a meaning to the painted design.",
+        visual: "coil",
+        imageStatus: "study",
+        materialColor: "#a1482b",
+        materialGround: "#eadbd2"
+      },
+      {
+        id: "riria-smith-kete",
+        code: "CT–1997–NZ",
+        title: "Kete with flat base and flap",
+        timelineLabel: "Kete with flap",
+        date: "1997",
+        year: 1997,
+        period: "1970–now",
+        region: "Aotearoa",
+        place: "Ahipara, Aotearoa New Zealand",
+        maker: "Riria Smith",
+        material: "Harakeke & muka",
+        materials: ["harakeke", "muka", "wood", "cotton"],
+        technique: "Raranga",
+        techniques: ["raranga", "braiding", "sewing", "takitahi"],
+        materialStep: "Harakeke + muka",
+        actionStep: "Raranga + braid",
+        resultStep: "Kete",
+        source: "Museum of New Zealand Te Papa Tongarewa",
+        sourceId: "ME022713",
+        sourceUrl: "https://collections.tepapa.govt.nz/object/539659",
+        fact: "Te Papa records this 1997 kete by Riria Smith in Ahipara. It uses boiled harakeke in a takitahi pattern, with a flat base, flap, plaited muka thong, wooden button, braided handle, and cotton lining.",
+        boundary: "Māori material and technique terms are retained from Te Papa's record. The structure study does not reproduce the object or extend the record with a cultural interpretation.",
+        visual: "raranga",
+        imageStatus: "study",
+        materialColor: "#2d6958",
+        materialGround: "#dce9df"
+      },
+      {
+        id: "sohn-crackle-box",
+        code: "CT–2018–KR",
+        title: "Box with crackle design",
+        timelineLabel: "Crackle-design box",
+        date: "2018",
+        year: 2018,
+        period: "1970–now",
+        region: "East Asia",
+        place: "Korea",
+        maker: "Sohn Daehyun",
+        material: "Ottchil & shell",
+        materials: ["ottchil lacquer", "wood", "hemp", "mother-of-pearl"],
+        technique: "Inlay",
+        techniques: ["lacquer", "mother-of-pearl inlay"],
+        materialStep: "Ottchil + shell",
+        actionStep: "Lacquer + inlay",
+        resultStep: "Crackle-design box",
+        source: "The Metropolitan Museum of Art",
+        sourceId: "2021.407a, b",
+        sourceUrl: "https://www.metmuseum.org/art/collection/search/855069",
+        fact: "The Met records this 2018 box by Sohn Daehyun in ottchil lacquer, wood, hemp, and mother-of-pearl. The catalog describes a geometric mother-of-pearl inlay referencing crackle techniques in earlier celadon.",
+        boundary: "The connection to celadon is explicitly attributed to the museum record. This archive does not turn that reference into a general claim about Korean lacquer or contemporary Korean identity.",
+        visual: "crackle",
+        imageStatus: "study",
+        materialColor: "#34383b",
+        materialGround: "#dfe1e2"
+      }
+    ];
+
+    const filterConfig = [
+      { id: "period-filter", key: "period", label: "Period" },
+      { id: "region-filter", key: "region", label: "Region" },
+      { id: "material-filter", key: "material", label: "Material" },
+      { id: "maker-filter", key: "maker", label: "Maker" },
+      { id: "technique-filter", key: "technique", label: "Technique" }
+    ];
+
+    const recordsNode = document.querySelector("#records");
+    const timelineNode = document.querySelector("#timeline");
+    const statusNode = document.querySelector("#result-status");
+    const activeFiltersNode = document.querySelector("#active-filters");
+    const searchInput = document.querySelector("#search-input");
+    const stateSelect = document.querySelector("#dataset-state");
+    const dialog = document.querySelector("#record-dialog");
+    const dialogBody = document.querySelector("#dialog-body");
+    const liveRegion = document.querySelector("#live-region");
+    let transientLoading = false;
+    let renderTimer = 0;
+    let currentDetailId = null;
+    let returnFocus = null;
+
+    const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+    }[character]));
+
+    const normalize = (value) => String(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+    function populateFilters() {
+      filterConfig.forEach(({ id, key }) => {
+        const select = document.querySelector(`#${id}`);
+        const values = [...new Set(records.map((record) => record[key]))].sort((a, b) => {
+          if (key === "period") return ["Before 1800", "1800–1899", "1900–1969", "1970–now"].indexOf(a) - ["Before 1800", "1800–1899", "1900–1969", "1970–now"].indexOf(b);
+          if (key === "maker" && a === "Maker unrecorded") return 1;
+          if (key === "maker" && b === "Maker unrecorded") return -1;
+          return a.localeCompare(b);
+        });
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.append(option);
+        });
+      });
+    }
+
+    function getFilters() {
+      return Object.fromEntries(filterConfig.map(({ id, key }) => [key, document.querySelector(`#${id}`).value]));
+    }
+
+    function getFilteredRecords() {
+      const query = normalize(searchInput.value.trim());
+      const filters = getFilters();
+      return records
+        .filter((record) => {
+          const searchable = normalize([
+            record.title, record.date, record.period, record.region, record.place, record.maker,
+            record.material, ...record.materials, record.technique, ...record.techniques,
+            record.source, record.sourceId, record.fact
+          ].join(" "));
+          const queryMatch = !query || searchable.includes(query);
+          const filterMatch = Object.entries(filters).every(([key, value]) => !value || record[key] === value);
+          return queryMatch && filterMatch;
+        })
+        .sort((a, b) => a.year - b.year);
+    }
+
+    function visualFor(record) {
+      if (record.imageStatus === "missing") {
+        return `<div class="missing-visual" role="img" aria-label="Object image unavailable in this offline archive"><div><strong>Image unavailable</strong><span>Metadata remains complete enough to search, compare, and cite.</span></div></div>`;
+      }
+      const common = `viewBox="0 0 260 240" role="img" aria-label="Structure study for ${escapeHtml(record.technique)}; this is not an object image"`;
+      const svg = {
+        inlay: `<svg ${common}><rect x="45" y="55" width="170" height="130" rx="4" fill="none" stroke="currentColor" stroke-width="8"/><path d="M65 80c30 30 32 70 0 93M100 70c42 35 43 83 1 103M135 68c38 37 39 77 0 105M170 70c31 28 34 68 2 99M198 78c-22 26-22 62 0 88" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="90" cy="105" r="8" fill="currentColor"/><circle cx="158" cy="132" r="8" fill="currentColor"/></svg>`,
+        weave: `<svg ${common}><path d="M50 47v146M82 47v146M114 47v146M146 47v146M178 47v146M210 47v146" stroke="currentColor" stroke-width="8"/><path d="M40 68h180M40 100h180M40 132h180M40 164h180" stroke="currentColor" stroke-width="6" stroke-dasharray="18 14"/><path d="M50 48l160 145M210 48L50 193" fill="none" stroke="currentColor" stroke-width="2" opacity=".45"/></svg>`,
+        strips: `<svg ${common}><path d="M45 45h30v150H45zM80 45h30v150H80zM115 45h30v150h-30zM150 45h30v150h-30zM185 45h30v150h-30z" fill="none" stroke="currentColor" stroke-width="5"/><path d="M45 74h170M45 107h170M45 140h170M45 173h170" stroke="currentColor" stroke-width="6" stroke-dasharray="12 10"/><path d="M78 45v150M113 45v150M148 45v150M183 45v150" stroke="currentColor" stroke-width="1.5" opacity=".5"/></svg>`,
+        lattice: `<svg ${common}><g fill="none" stroke="currentColor" stroke-width="5"><circle cx="85" cy="82" r="35"/><circle cx="130" cy="82" r="35"/><circle cx="175" cy="82" r="35"/><circle cx="108" cy="121" r="35"/><circle cx="153" cy="121" r="35"/><circle cx="85" cy="160" r="35"/><circle cx="130" cy="160" r="35"/><circle cx="175" cy="160" r="35"/></g><path d="M55 201h150" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>`,
+        coil: `<svg ${common}><path d="M130 40c-65 0-96 50-84 104 10 47 48 63 84 63s74-16 84-63c12-54-19-104-84-104Z" fill="none" stroke="currentColor" stroke-width="7"/><path d="M130 74c-39 0-63 24-63 57s24 54 63 54 63-21 63-54-24-57-63-57Zm0 22c-24 0-39 13-39 35s15 32 39 32 39-10 39-32-15-35-39-35Zm0 22c-10 0-17 5-17 13s7 12 17 12 17-4 17-12-7-13-17-13Z" fill="none" stroke="currentColor" stroke-width="4"/><path d="M72 58c20 10 96 10 116 0" fill="none" stroke="currentColor" stroke-width="4"/></svg>`,
+        raranga: `<svg ${common}><path d="M52 55h156v130H52z" fill="none" stroke="currentColor" stroke-width="7"/><path d="M64 55l36 130M96 55l36 130M128 55l36 130M160 55l36 130M196 55l-36 130M164 55l-36 130M132 55L96 185M100 55L64 185" stroke="currentColor" stroke-width="4"/><path d="M78 185c12 28 92 28 104 0" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/></svg>`,
+        crackle: `<svg ${common}><path d="M48 52h164v136H48z" fill="none" stroke="currentColor" stroke-width="8"/><path d="M75 52l18 34-23 27 36 28-18 47M121 52l-14 40 30 24-8 35 24 37M169 52l-17 28 26 30-18 30 25 48M48 97l42 8 33-18 37 18 52-14M48 151l45-10 36 10 31-11 52 12" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg>`
+      }[record.visual];
+      return svg || "";
+    }
+
+    function renderActiveFilters() {
+      activeFiltersNode.innerHTML = "";
+      const query = searchInput.value.trim();
+      const filters = getFilters();
+      const chips = [];
+      if (query) chips.push({ key: "search", label: "Search", value: query });
+      filterConfig.forEach(({ key, label }) => {
+        if (filters[key]) chips.push({ key, label, value: filters[key] });
+      });
+      chips.forEach((chip) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "filter-chip";
+        button.dataset.removeFilter = chip.key;
+        button.innerHTML = `<span>${escapeHtml(chip.label)}</span>${escapeHtml(chip.value)} ×`;
+        button.setAttribute("aria-label", `Remove ${chip.label} filter: ${chip.value}`);
+        activeFiltersNode.append(button);
+      });
+    }
+
+    function renderTimeline(items) {
+      const eras = [
+        { year: 1500, label: "1500" }, { year: 1700, label: "1700" },
+        { year: 1900, label: "1900" }, { year: 2000, label: "2000" }, { year: 2020, label: "2020" }
+      ];
+      timelineNode.innerHTML = eras.map((era) => {
+        const left = 3 + ((era.year - 1450) / (2025 - 1450)) * 94;
+        return `<span class="timeline-era" style="left:${left}%">${era.label}</span>`;
+      }).join("");
+      items.forEach((record, index) => {
+        const marker = document.createElement("button");
+        const left = 3 + ((record.year - 1450) / (2025 - 1450)) * 94;
+        const stem = 2.3 + index * 2.05;
+        marker.type = "button";
+        marker.className = "timeline-marker";
+        marker.style.left = `${left}%`;
+        marker.style.setProperty("--stem", `${stem}rem`);
+        marker.dataset.openRecord = record.id;
+        const shortDate = record.date === "Early to mid-20th century" ? "Early–mid 20th c." : record.date;
+        marker.dataset.label = `${shortDate} · ${record.timelineLabel}`;
+        if (left > 82) marker.classList.add("align-left");
+        marker.setAttribute("aria-label", `Open ${record.title}, ${record.date}`);
+        if (currentDetailId === record.id) marker.setAttribute("aria-current", "true");
+        timelineNode.append(marker);
+      });
+    }
+
+    function recordCard(record) {
+      return `
+        <article class="record-card">
+          <figure class="mechanism-figure" style="--material-color:${record.materialColor};--material-ground:${record.materialGround}">
+            ${visualFor(record)}
+            <figcaption>${record.imageStatus === "missing" ? "No visual surrogate · metadata retained" : "Structure study · not an object image"}</figcaption>
+          </figure>
+          <div class="record-body">
+            <div class="card-topline">
+              <span class="card-code">${escapeHtml(record.code)}</span>
+              <span class="evidence-state ${record.imageStatus === "missing" ? "missing" : ""}">${record.imageStatus === "missing" ? "Image missing" : "Fact checked"}</span>
+            </div>
+            <h3>${escapeHtml(record.title)}</h3>
+            <p class="maker-line"><strong>${escapeHtml(record.maker)}</strong> · ${escapeHtml(record.date)}</p>
+            <div class="making-chain" aria-label="Making chain: material, action, result">
+              <div class="chain-step"><span>Material</span><strong>${escapeHtml(record.materialStep)}</strong></div>
+              <span class="chain-arrow" aria-hidden="true">→</span>
+              <div class="chain-step"><span>Action</span><strong>${escapeHtml(record.actionStep)}</strong></div>
+              <span class="chain-arrow" aria-hidden="true">→</span>
+              <div class="chain-step"><span>Object</span><strong>${escapeHtml(record.resultStep)}</strong></div>
+            </div>
+            <dl class="record-meta">
+              <div><dt>Place</dt><dd>${escapeHtml(record.place)}</dd></div>
+              <div><dt>Period</dt><dd>${escapeHtml(record.period)}</dd></div>
+              <div><dt>Material group</dt><dd>${escapeHtml(record.material)}</dd></div>
+              <div><dt>Primary technique</dt><dd>${escapeHtml(record.technique)}</dd></div>
+            </dl>
+            <button class="open-record" type="button" data-open-record="${record.id}">Inspect evidence record</button>
+          </div>
+        </article>`;
+    }
+
+    function renderSkeleton() {
+      recordsNode.className = "skeleton-grid";
+      recordsNode.setAttribute("aria-busy", "true");
+      recordsNode.innerHTML = `<div class="skeleton" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div><span class="live-region">Loading local craft records</span>`;
+      statusNode.dataset.kind = "loading";
+      statusNode.textContent = "Loading · evidence shape preserved";
+      timelineNode.innerHTML = '<span class="timeline-era" style="left:3%">Awaiting chronology…</span>';
+      liveRegion.textContent = "Loading local craft records.";
+    }
+
+    function renderError() {
+      recordsNode.className = "";
+      recordsNode.setAttribute("aria-busy", "false");
+      recordsNode.innerHTML = `<div class="state-panel" role="alert"><div><span class="state-mark" aria-hidden="true">!</span><div class="section-label">Connection error</div><h3>The source set did not arrive.</h3><p>Your query and filters are still intact. Retry the local dataset; no interpretation or replacement records will be fabricated.</p><button class="state-action" type="button" data-retry>Retry local records</button></div></div>`;
+      statusNode.dataset.kind = "error";
+      statusNode.textContent = "Error · filter state retained";
+      timelineNode.innerHTML = '<span class="timeline-era" style="left:3%">Chronology unavailable · retry below</span>';
+      liveRegion.textContent = "Craft records could not be loaded. Your filters remain intact.";
+    }
+
+    function renderEmpty() {
+      const query = searchInput.value.trim();
+      recordsNode.className = "";
+      recordsNode.setAttribute("aria-busy", "false");
+      recordsNode.innerHTML = `<div class="state-panel"><div><span class="state-mark" aria-hidden="true">0</span><div class="section-label">No matching record</div><h3>The thread ends here.</h3><p>${query ? `No verified record in this compact set matches \u201c${escapeHtml(query)}\u201d with the active filters.` : "No record matches this combination of period, region, material, maker, and technique."} Broaden the evidence boundary instead of filling the gap with guesses.</p><button class="state-action" type="button" data-clear-all>Clear all filters</button></div></div>`;
+      statusNode.dataset.kind = "ready";
+      statusNode.textContent = "Ready · 0 verified matches";
+      liveRegion.textContent = "No matching craft records. Clear or change filters.";
+    }
+
+    function render() {
+      renderActiveFilters();
+      if (stateSelect.value === "loading" || transientLoading) {
+        renderSkeleton();
+        return;
+      }
+      if (stateSelect.value === "error") {
+        renderError();
+        return;
+      }
+      const items = getFilteredRecords();
+      renderTimeline(items);
+      if (!items.length) {
+        renderEmpty();
+        return;
+      }
+      recordsNode.className = "records";
+      recordsNode.setAttribute("aria-busy", "false");
+      recordsNode.innerHTML = items.map(recordCard).join("");
+      const regionCount = new Set(items.map((record) => record.region)).size;
+      statusNode.dataset.kind = "ready";
+      statusNode.textContent = `Ready · ${items.length} record${items.length === 1 ? "" : "s"} · ${regionCount} region${regionCount === 1 ? "" : "s"}`;
+      liveRegion.textContent = `${items.length} verified craft record${items.length === 1 ? "" : "s"} matched.`;
+    }
+
+    function scheduleRender({ focusResults = false } = {}) {
+      window.clearTimeout(renderTimer);
+      transientLoading = true;
+      render();
+      renderTimer = window.setTimeout(() => {
+        transientLoading = false;
+        render();
+        if (focusResults) document.querySelector("#collection-title").scrollIntoView({ block: "start" });
+      }, 170);
+    }
+
+    function clearAll() {
+      searchInput.value = "";
+      filterConfig.forEach(({ id }) => { document.querySelector(`#${id}`).value = ""; });
+      stateSelect.value = "ready";
+      scheduleRender();
+      searchInput.focus();
+    }
+
+    function openRecord(id, trigger) {
+      const record = records.find((item) => item.id === id);
+      if (!record) return;
+      currentDetailId = id;
+      returnFocus = trigger || document.activeElement;
+      const related = records
+        .filter((item) => item.id !== id && (item.material === record.material || item.technique === record.technique || item.region === record.region))
+        .slice(0, 4);
+      dialogBody.innerHTML = `
+        <div class="dialog-shell">
+          <div class="dialog-visual" style="--material-color:${record.materialColor};--material-ground:${record.materialGround}">
+            ${visualFor(record)}
+          </div>
+          <div class="dialog-content">
+            <div class="dialog-top">
+              <div>
+                <span class="card-code">${escapeHtml(record.code)} · ${escapeHtml(record.date)}</span>
+                <h2 id="dialog-title">${escapeHtml(record.title)}</h2>
+                <p class="dialog-maker"><strong>${escapeHtml(record.maker)}</strong> · ${escapeHtml(record.place)}</p>
+              </div>
+              <button class="dialog-close" type="button" data-close-dialog aria-label="Close detail">×</button>
+            </div>
+
+            <dl class="detail-facts">
+              <div class="detail-fact"><dt class="fact-kind">Material</dt><dd>${escapeHtml(record.materials.join(" · "))}</dd></div>
+              <div class="detail-fact"><dt class="fact-kind">Technique</dt><dd>${escapeHtml(record.techniques.join(" · "))}</dd></div>
+              <div class="detail-fact"><dt class="fact-kind">Region</dt><dd>${escapeHtml(record.region)}</dd></div>
+              <div class="detail-fact"><dt class="fact-kind">Image state</dt><dd>${record.imageStatus === "missing" ? "Unavailable · metadata retained" : "Structure study only · not object image"}</dd></div>
+            </dl>
+
+            <section class="evidence-section">
+              <span class="fact-kind">Collection record fact</span>
+              <h3>What is supported</h3>
+              <p>${escapeHtml(record.fact)}</p>
+            </section>
+
+            <section class="boundary-box">
+              <strong>Interpretation boundary</strong>
+              <p>${escapeHtml(record.boundary)}</p>
+            </section>
+
+            <div class="trace-actions" aria-label="Follow this record through archive filters">
+              <button class="detail-action" type="button" data-follow-filter="material" data-follow-value="${escapeHtml(record.material)}">Follow material · ${escapeHtml(record.material)}</button>
+              <button class="detail-action" type="button" data-follow-filter="technique" data-follow-value="${escapeHtml(record.technique)}">Follow method · ${escapeHtml(record.technique)}</button>
+              <button class="detail-action" type="button" data-follow-filter="region" data-follow-value="${escapeHtml(record.region)}">Follow region · ${escapeHtml(record.region)}</button>
+            </div>
+
+            <div class="source-row">
+              <div><span class="source-id">Source · ${escapeHtml(record.sourceId)}</span><br><span>${escapeHtml(record.source)}</span></div>
+              <a href="${record.sourceUrl}" target="_blank" rel="noreferrer">Open cited record ↗</a>
+            </div>
+
+            ${related.length ? `<section class="evidence-section"><span class="fact-kind">Related evidence</span><h3>Continue by shared relation</h3><div class="related-list">${related.map((item) => `<button class="related-button" type="button" data-related-record="${item.id}">${escapeHtml(item.title)}<br><span class="micro">${escapeHtml(item.date)} · ${escapeHtml(item.technique)}</span></button>`).join("")}</div></section>` : ""}
+
+            <div class="dialog-nav">
+              <button type="button" data-detail-step="-1" aria-label="Previous record">← Previous</button>
+              <button type="button" data-detail-step="1" aria-label="Next record">Next →</button>
+            </div>
+          </div>
+        </div>`;
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+      dialog.querySelector("[data-close-dialog]").focus();
+      renderTimeline(getFilteredRecords());
+    }
+
+    function closeDialog() {
+      currentDetailId = null;
+      if (dialog.open && typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+      renderTimeline(getFilteredRecords());
+      if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
+    }
+
+    function stepDetail(direction) {
+      const items = getFilteredRecords();
+      const pool = items.length ? items : records;
+      const index = pool.findIndex((item) => item.id === currentDetailId);
+      const next = pool[(index + direction + pool.length) % pool.length];
+      if (next) openRecord(next.id, returnFocus);
+    }
+
+    populateFilters();
+    render();
+
+    searchInput.addEventListener("input", () => scheduleRender());
+    filterConfig.forEach(({ id }) => {
+      document.querySelector(`#${id}`).addEventListener("change", () => scheduleRender());
+    });
+    stateSelect.addEventListener("change", render);
+    document.querySelector("#clear-filters").addEventListener("click", clearAll);
+
+    document.addEventListener("click", (event) => {
+      const openTrigger = event.target.closest("[data-open-record]");
+      if (openTrigger) openRecord(openTrigger.dataset.openRecord, openTrigger);
+
+      const removeTrigger = event.target.closest("[data-remove-filter]");
+      if (removeTrigger) {
+        const key = removeTrigger.dataset.removeFilter;
+        if (key === "search") searchInput.value = "";
+        else {
+          const config = filterConfig.find((item) => item.key === key);
+          if (config) document.querySelector(`#${config.id}`).value = "";
+        }
+        scheduleRender();
+      }
+
+      if (event.target.closest("[data-clear-all]")) clearAll();
+      if (event.target.closest("[data-close-dialog]")) closeDialog();
+      if (event.target.closest("[data-retry]")) {
+        stateSelect.value = "ready";
+        scheduleRender();
+      }
+
+      const followTrigger = event.target.closest("[data-follow-filter]");
+      if (followTrigger) {
+        const config = filterConfig.find((item) => item.key === followTrigger.dataset.followFilter);
+        if (config) document.querySelector(`#${config.id}`).value = followTrigger.dataset.followValue;
+        closeDialog();
+        scheduleRender({ focusResults: true });
+      }
+
+      const relatedTrigger = event.target.closest("[data-related-record]");
+      if (relatedTrigger) openRecord(relatedTrigger.dataset.relatedRecord, returnFocus);
+
+      const stepTrigger = event.target.closest("[data-detail-step]");
+      if (stepTrigger) stepDetail(Number(stepTrigger.dataset.detailStep));
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "/" && !dialog.open && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+        event.preventDefault();
+        searchInput.focus();
+      }
+      if (dialog.open && event.key === "ArrowLeft" && !["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) stepDetail(-1);
+      if (dialog.open && event.key === "ArrowRight" && !["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) stepDetail(1);
+    });
+
+    dialog.addEventListener("close", () => {
+      currentDetailId = null;
+      renderTimeline(getFilteredRecords());
+      if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
+    });
+  </script>
+</body>
+</html>

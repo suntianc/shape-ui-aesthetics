@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shape UI Aesthetics"
+  short_description: "Direct authored, coherent interface aesthetics"
+  default_prompt: "Use $shape-ui-aesthetics to create an authored interface direction for this product."
