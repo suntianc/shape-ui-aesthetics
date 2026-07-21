@@ -16,6 +16,8 @@ Shape UI Aesthetics treats an interface as one authored system: establish the pr
 
 Open [`examples/nine-scenarios/gallery.html`](examples/nine-scenarios/gallery.html) locally to compare all nine pages.
 
+https://github.com/user-attachments/assets/b7ac16cc-34f6-4e12-ae62-29ea714a1386
+
 | # | Scenario | Page | Generation model |
 |---:|---|---|---|
 | 01 | Creator Portfolio | [open](examples/nine-scenarios/creator-portfolio/index.html) | `opencode-go/minimax-m2.7` |
