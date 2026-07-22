@@ -1,6 +1,6 @@
 # Shape UI Aesthetics
 
-An authored aesthetic system for designing distinctive, medium-native user interfaces with Codex and Claude Code.
+An authored aesthetic system for designing distinctive, medium-native user interfaces with AI coding agents.
 
 Shape UI Aesthetics treats an interface as one authored system: establish the protagonist, ritual, desired afterimage, central tension, aesthetic thesis, and Signature Move before selecting components. Its nine-domain capability layer then reconciles composition, typography, color, motion, interaction, computational medium, human fit, and evidence into one coherent result.
 
@@ -11,8 +11,6 @@ Shape UI Aesthetics treats an interface as one authored system: establish the pr
 - `releases/shape-ui-aesthetics/1.0.0/` — the accepted Codex runtime package and manifest.
 - `releases/shape-ui-aesthetics/distributions/1.0.0/` — the matching Codex and Claude Code archives.
 - `examples/nine-scenarios/` — nine self-contained qualification demonstrations.
-- `research/` — source-backed research notes; it is not a Runtime dependency.
-- `templates/skill/` — a minimal, portable starting point for a future independent Skill.
 - `tools/validate_repository.py` — the reproducible public repository gate.
 - `evaluation/shape-ui-aesthetics/package_platform_distributions.py` — deterministic dual-platform packaging and validation.
 
@@ -36,9 +34,34 @@ https://github.com/user-attachments/assets/b7ac16cc-34f6-4e12-ae62-29ea714a1386
 
 The first five completed pages used `minimax-m2.7`; after socket/SQLite instability, the remaining four used the same medium-cost tier's `mimo-v2.5`. The AI Landing Review and 3D Logistics Review pages also received their technical corrections from `mimo-v2.5`.
 
-## Install a release
+## Install across agents
 
-Each accepted version publishes both platform archives. The archives contain the same references and capability contracts. The Codex archive includes `agents/openai.yaml`; the Claude Code archive omits that Codex-only UI metadata and adapts only the platform identity in `SKILL.md`.
+The editable Runtime Source uses platform-neutral discovery metadata and is the repository's only discoverable Skill. Install it with the Vercel Labs Skills CLI for any supported agent:
+
+```bash
+npx skills@latest add suntianc/shape-ui-aesthetics \
+  --skill shape-ui-aesthetics \
+  --agent '*' \
+  --global \
+  --yes
+```
+
+Omit `--global` for a project-local installation. The CLI installs from the Git repository; accepted release archives remain the auditable, checksum-backed distribution record.
+
+Pin installation to the accepted `v1.0.0` Runtime Package path for reproducibility:
+
+```bash
+npx skills@latest add \
+  https://github.com/suntianc/shape-ui-aesthetics/tree/v1.0.0/packages/shape-ui-aesthetics \
+  --skill shape-ui-aesthetics \
+  --agent '*' \
+  --global \
+  --yes
+```
+
+## Install the 1.0.0 archives
+
+Both `1.0.0` archives contain the same platform-neutral `SKILL.md`, references, and capability contracts. The Codex archive additionally includes `agents/openai.yaml`; the Claude Code archive omits only that Codex-specific UI metadata.
 
 ```bash
 # Claude Code
@@ -50,7 +73,7 @@ unzip releases/shape-ui-aesthetics/distributions/1.0.0/shape-ui-aesthetics-1.0.0
 
 Inspect an existing installation before replacing it. Do not use the rejected legacy package as a rollback target.
 
-## Build and validate platform distributions
+## Build and validate release archives
 
 Build only from an accepted immutable release. The builder refuses to overwrite an existing version:
 
@@ -58,6 +81,8 @@ Build only from an accepted immutable release. The builder refuses to overwrite 
 python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1.0.0
 python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.0.0
 ```
+
+`SKILL.md` remains byte-identical across Codex and Claude Code archives; only Codex-specific `agents/openai.yaml` is omitted from the Claude Code archive.
 
 ## Validate source work and releases
 
@@ -71,7 +96,7 @@ python3 tools/validate_repository.py --mode release --version 1.0.0
 
 ## Status
 
-The `1.0.0` Runtime Package is accepted. The nine example pages are independently browser-checked at mobile and desktop widths; they are demonstration artifacts, not a replacement for human aesthetic acceptance of future changes.
+The platform-neutral `1.0.0` Runtime Package is accepted for cross-agent distribution. The nine example pages are independently browser-checked at mobile and desktop widths; they are demonstration artifacts, not a replacement for human aesthetic acceptance of future changes.
 
 ## Contributing
 

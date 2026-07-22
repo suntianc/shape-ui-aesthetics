@@ -1,6 +1,6 @@
 ---
 name: shape-ui-aesthetics
-description: Create, redesign, refine, or review screen-based interfaces as authored aesthetic systems. Use when Codex must establish a product-specific visual thesis, shape composition and hierarchy, choose an expressive computational medium, reconcile motion, interaction, color, cognition, and coherence decisions, or critique a polished but generic UI while preserving real content, functionality, accessibility, and implementation truth.
+description: Create, redesign, refine, or review screen-based interfaces as authored aesthetic systems. Use when an AI coding agent must establish a product-specific visual thesis, shape composition and hierarchy, choose an expressive computational medium, reconcile motion, interaction, color, cognition, and coherence decisions, or critique a polished but generic UI while preserving real content, functionality, accessibility, and implementation truth.
 ---
 
 # Shape UI Aesthetics

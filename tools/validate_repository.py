@@ -23,6 +23,7 @@ FRONTMATTER = re.compile(r"\A---\n(?P<yaml>.*?)\n---\n", re.DOTALL)
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]*\]\((?P<target>[^)]+)\)")
 STABLE_VERSION = re.compile(r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)$")
 FORBIDDEN_RUNTIME_NAMES = {"README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"}
+NON_PUBLIC_ROOTS = {".agents", ".claude", ".git", ".scratch", "books", "pdfs", "research", "releases"}
 
 
 def digest(path: Path) -> str:
@@ -49,7 +50,8 @@ def within(root: Path, path: Path) -> bool:
 
 
 def validate_frontmatter(path: Path, failures: list[str]) -> None:
-    match = FRONTMATTER.match(path.read_text(encoding="utf-8"))
+    text = path.read_text(encoding="utf-8")
+    match = FRONTMATTER.match(text)
     if not match:
         failures.append("Runtime SKILL.md has malformed frontmatter")
         return
@@ -61,6 +63,8 @@ def validate_frontmatter(path: Path, failures: list[str]) -> None:
         failures.append("Runtime SKILL.md name does not match its directory")
     if not isinstance(metadata["description"], str) or not metadata["description"].strip():
         failures.append("Runtime SKILL.md description is empty")
+    if "Codex" in text or "Claude" in text:
+        failures.append("Runtime SKILL.md must be platform-neutral for cross-agent distribution")
 
 
 def validate_links(root: Path, failures: list[str]) -> None:
@@ -143,6 +147,22 @@ def validate_runtime_source(failures: list[str]) -> None:
     validate_links(SOURCE, failures)
 
 
+def validate_public_skill_inventory(failures: list[str]) -> None:
+    unexpected: list[str] = []
+    for path in ROOT.rglob("SKILL.md"):
+        relative = path.relative_to(ROOT)
+        if relative.parts[0] in NON_PUBLIC_ROOTS:
+            continue
+        if path == SOURCE / "SKILL.md":
+            continue
+        unexpected.append(relative.as_posix())
+    if unexpected:
+        failures.append(
+            "additional discoverable SKILL.md files would be exposed by repository installers: "
+            f"{sorted(unexpected)}"
+        )
+
+
 def validate_accepted_release(version: str, failures: list[str]) -> Path | None:
     release_root = RELEASES / version
     package = release_root / "package" / PACKAGE_NAME
@@ -220,6 +240,7 @@ def main() -> int:
             failures.append(f"missing repository document: {required.relative_to(ROOT)}")
 
     validate_runtime_source(failures)
+    validate_public_skill_inventory(failures)
 
     if args.version and not STABLE_VERSION.fullmatch(args.version):
         failures.append(f"version is not a stable semantic version: {args.version}")
@@ -244,6 +265,7 @@ def main() -> int:
     print("PASS")
     print(f"mode={args.mode}")
     print("runtime_source=valid")
+    print("cross_agent_source=true")
     print(f"stable_baseline={version}")
     print("baseline_integrity=true")
     print(f"source_release_parity={'true' if args.mode == 'release' else 'not_required'}")

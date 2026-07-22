@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and validate Codex and Claude Code distributions from one accepted release."""
+"""Build and validate platform archives from one accepted Runtime Package."""
 
 from __future__ import annotations
 
@@ -117,40 +117,33 @@ def accepted_package(version: str) -> tuple[Path, dict[str, bytes]]:
     return package, payload
 
 
-def claude_skill(source: bytes) -> bytes:
+def skill_document(source: bytes) -> tuple[dict[str, object], str, str]:
     text = source.decode("utf-8")
     match = FRONTMATTER.match(text)
     if not match:
         raise ValueError("SKILL.md frontmatter is malformed")
     metadata = yaml.safe_load(match.group("yaml"))
-    if set(metadata) != {"name", "description"}:
+    if not isinstance(metadata, dict) or set(metadata) != {"name", "description"}:
         raise ValueError("SKILL.md frontmatter must contain only name and description")
     if metadata.get("name") != PACKAGE_NAME:
         raise ValueError("SKILL.md name does not match the package")
     description = metadata.get("description")
-    if not isinstance(description, str) or description.count("Codex") != 1:
-        raise ValueError("Codex source description must contain exactly one platform name")
+    if not isinstance(description, str) or not description.strip():
+        raise ValueError("SKILL.md description is missing")
+    return metadata, match.group("body"), text
 
-    adapted = {
-        "name": metadata["name"],
-        "description": description.replace("Codex", "Claude"),
-    }
-    frontmatter = yaml.safe_dump(
-        adapted,
-        sort_keys=False,
-        allow_unicode=True,
-        width=4096,
-    ).strip()
-    output = f"---\n{frontmatter}\n---\n{match.group('body')}"
-    if "Codex" in output:
-        raise ValueError("Claude Code SKILL.md still contains a Codex-specific instruction")
-    return output.encode("utf-8")
+
+def is_portable_skill(source: bytes) -> bool:
+    _, _, text = skill_document(source)
+    return "Codex" not in text and "Claude" not in text
 
 
 def expected_payloads(version: str) -> tuple[dict[str, bytes], dict[str, bytes]]:
     _, codex = accepted_package(version)
     if "SKILL.md" not in codex or "agents/openai.yaml" not in codex:
         raise ValueError("accepted Codex package lacks required platform files")
+    if not is_portable_skill(codex["SKILL.md"]):
+        raise ValueError("accepted Runtime Package SKILL.md must be platform-neutral")
     unexpected_agents = sorted(
         path for path in codex if path.startswith("agents/") and path != "agents/openai.yaml"
     )
@@ -160,7 +153,6 @@ def expected_payloads(version: str) -> tuple[dict[str, bytes], dict[str, bytes]]
     claude = {
         path: value for path, value in codex.items() if path != "agents/openai.yaml"
     }
-    claude["SKILL.md"] = claude_skill(codex["SKILL.md"])
     return codex, claude
 
 
@@ -195,17 +187,18 @@ def validate_frontmatter(skill: bytes, platform: str) -> list[str]:
     if not match:
         return [f"{platform}: malformed SKILL.md frontmatter"]
     metadata = yaml.safe_load(match.group("yaml"))
-    if set(metadata) != {"name", "description"}:
+    if not isinstance(metadata, dict) or set(metadata) != {"name", "description"}:
         failures.append(f"{platform}: frontmatter must contain only name and description")
+        return failures
     if metadata.get("name") != PACKAGE_NAME:
         failures.append(f"{platform}: skill name mismatch")
-    expected_agent = "Codex" if platform == "codex" else "Claude"
-    unexpected_agent = "Claude" if platform == "codex" else "Codex"
     description = metadata.get("description", "")
-    if expected_agent not in description:
-        failures.append(f"{platform}: description lacks {expected_agent} platform identity")
-    if unexpected_agent in text:
-        failures.append(f"{platform}: SKILL.md contains {unexpected_agent}-specific text")
+    if not isinstance(description, str) or not description.strip():
+        failures.append(f"{platform}: description is missing")
+        return failures
+
+    if "Codex" in text or "Claude" in text:
+        failures.append(f"{platform}: SKILL.md must be platform-neutral")
     return failures
 
 
@@ -230,7 +223,7 @@ def validate_directory(root: Path, version: str, require_read_only: bool) -> lis
     if actual_codex != expected_codex:
         failures.append("Codex archive lacks byte-level parity with the accepted release")
     if actual_claude != expected_claude:
-        failures.append("Claude Code archive differs from the deterministic adaptation")
+        failures.append("Claude Code archive differs from the deterministic platform payload")
     if "agents/openai.yaml" not in actual_codex:
         failures.append("Codex archive lacks agents/openai.yaml")
     if any(path.startswith("agents/") for path in actual_claude):
@@ -268,6 +261,12 @@ def validate_directory(root: Path, version: str, require_read_only: bool) -> lis
             if row.get("skill_sha256") != digest_bytes(payload["SKILL.md"]):
                 failures.append(f"{platform}: SKILL.md checksum mismatch in manifest")
 
+    shared_payload = manifest.get("shared_payload", {})
+    if "skill_byte_identical" in shared_payload:
+        actual = actual_codex["SKILL.md"] == actual_claude["SKILL.md"]
+        if shared_payload.get("skill_byte_identical") is not actual:
+            failures.append("shared payload SKILL.md parity record mismatch")
+
     if require_read_only:
         writable = writable_paths(root)
         if writable:
@@ -283,6 +282,7 @@ def build(version: str) -> None:
         raise SystemExit(f"refusing to overwrite immutable distributions: {destination}")
 
     codex, claude = expected_payloads(version)
+    portable_skill = codex["SKILL.md"] == claude["SKILL.md"]
     PLATFORM_ROOT.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{version}-", dir=PLATFORM_ROOT))
     try:
@@ -313,7 +313,7 @@ def build(version: str) -> None:
                     "runtime_files": len(claude),
                     "skill_sha256": digest_bytes(claude["SKILL.md"]),
                     "excluded": ["agents/openai.yaml"],
-                    "adaptation": "SKILL.md description platform identity: Codex -> Claude",
+                    "adaptation": "omit Codex-only agents/openai.yaml; preserve portable SKILL.md",
                 },
             ],
             "shared_payload": {
@@ -321,6 +321,7 @@ def build(version: str) -> None:
                 "domain_indexes": 9,
                 "cross_cutting_references": 2,
                 "references_byte_identical": True,
+                "skill_byte_identical": portable_skill,
             },
         }
         (temporary / "manifest.yaml").write_text(
@@ -348,6 +349,7 @@ def build(version: str) -> None:
     print(f"created={destination}")
     print(f"codex_runtime_files={len(codex)}")
     print(f"claude_code_runtime_files={len(claude)}")
+    print(f"portable_skill={str(portable_skill).lower()}")
     print("references_byte_identical=true")
     print("writable_distribution_paths=0")
 
@@ -364,11 +366,13 @@ def validate(version: str) -> int:
         return 1
     manifest = yaml.safe_load((destination / "manifest.yaml").read_text(encoding="utf-8"))
     rows = {row["platform"]: row for row in manifest["distributions"]}
+    shared_payload = manifest.get("shared_payload", {})
     print("PASS")
     print(f"release_version={version}")
     print(f"codex_runtime_files={rows['codex']['runtime_files']}")
     print(f"claude_code_runtime_files={rows['claude-code']['runtime_files']}")
     print("platform_distributions=2")
+    print(f"portable_skill={str(bool(shared_payload.get('skill_byte_identical'))).lower()}")
     print("references_byte_identical=true")
     print("legacy_filename_hits=0")
     print("writable_distribution_paths=0")

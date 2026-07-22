@@ -6,20 +6,21 @@ package:
 distributions:
 - platform: codex
   archive: shape-ui-aesthetics-1.0.0-codex.zip
-  archive_sha256: d3f78da2fbef99555ce733075cf48935bc37cf7a00c712d59826e9421cd177c5
+  archive_sha256: 40fb6c2b3bed11cdea3bec0f12f1c644e992c7957e91d0e1850735bcc6b7ebfa
   runtime_files: 45
-  skill_sha256: 028a812495a5c7789973f5ac8a7484e92c59cb09fe18f22d5172e5955a8966f1
+  skill_sha256: 57e1a8dd9e936c965aa589f8904335a1071b16fdaf81868c5bc10e5636885d68
   excluded: []
 - platform: claude-code
   archive: shape-ui-aesthetics-1.0.0-claude-code.zip
-  archive_sha256: aef118e91a82006ef5a0851278fe86b8f9e045f0bacc9323e15ec8162214cb65
+  archive_sha256: 24f3489256136bd0b77ca2cd8ebab4acffcff951e0964bd031930c928363f360
   runtime_files: 44
-  skill_sha256: c854e23f743df71499144a65cc9ba5d3ba6c359795705d6ee856c9c073bd6483
+  skill_sha256: 57e1a8dd9e936c965aa589f8904335a1071b16fdaf81868c5bc10e5636885d68
   excluded:
   - agents/openai.yaml
-  adaptation: 'SKILL.md description platform identity: Codex -> Claude'
+  adaptation: omit Codex-only agents/openai.yaml; preserve portable SKILL.md
 shared_payload:
   capability_contracts: 32
   domain_indexes: 9
   cross_cutting_references: 2
   references_byte_identical: true
+  skill_byte_identical: true
