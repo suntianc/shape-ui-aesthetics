@@ -7,9 +7,13 @@ Shape UI Aesthetics treats an interface as one authored system: establish the pr
 ## Repository layout
 
 - `packages/shape-ui-aesthetics/` — the single editable Runtime Package source.
+- `evaluation/shape-ui-aesthetics/` — package-external qualification inputs and local exploratory runs; it never ships in the Skill payload.
 - `releases/shape-ui-aesthetics/1.0.0/` — the accepted Codex runtime package and manifest.
 - `releases/shape-ui-aesthetics/distributions/1.0.0/` — the matching Codex and Claude Code archives.
-- `examples/nine-scenarios/` — nine self-contained HTML pages generated with OpenCode.
+- `examples/nine-scenarios/` — nine self-contained qualification demonstrations.
+- `research/` — source-backed research notes; it is not a Runtime dependency.
+- `templates/skill/` — a minimal, portable starting point for a future independent Skill.
+- `tools/validate_repository.py` — the reproducible public repository gate.
 - `evaluation/shape-ui-aesthetics/package_platform_distributions.py` — deterministic dual-platform packaging and validation.
 
 ## Nine scenario gallery
@@ -55,6 +59,15 @@ python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1
 python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.0.0
 ```
 
+## Verify a clone
+
+The public check validates the source Skill's metadata and local references, confirms byte-level parity with the accepted release, and verifies both distribution archives against their manifests. It deliberately does not treat visual judgment as a mechanical pass/fail score.
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 tools/validate_repository.py
+```
+
 ## Status
 
 The `1.0.0` Runtime Package is accepted. The nine example pages are independently browser-checked at mobile and desktop widths; they are demonstration artifacts, not a replacement for human aesthetic acceptance of future changes.
@@ -62,3 +75,5 @@ The `1.0.0` Runtime Package is accepted. The nine example pages are independentl
 ## Contributing
 
 Keep `packages/shape-ui-aesthetics/` as the only editable runtime source. Every accepted package version must produce both a Codex and a Claude Code distribution from the same release artifact. Changes to capability behavior, routing, or the Stable Spine require the project's evolution and qualification process.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change. Report security concerns privately as described in [SECURITY.md](SECURITY.md).

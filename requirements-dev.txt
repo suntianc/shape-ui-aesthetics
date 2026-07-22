@@ -1,0 +1,2 @@
+# Required only for repository validation and deterministic distribution tooling.
+PyYAML>=6.0,<7

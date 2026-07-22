@@ -1,9 +1,13 @@
 .DS_Store
+__pycache__/
+*.py[cod]
 
 # Local agent environments and research workspace data
 .agents/
 .claude/
 .scratch/
+.research/
+research/
 books/
 pdfs/
 skills-lock.json
