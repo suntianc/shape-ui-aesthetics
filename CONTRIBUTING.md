@@ -5,6 +5,7 @@
 - Edit Runtime content only in `packages/shape-ui-aesthetics/`.
 - Keep evaluations, fixtures, generated artifacts, and review records outside the Runtime Package.
 - Treat `releases/shape-ui-aesthetics/<version>/` and its distributions as immutable accepted artifacts. Do not amend them in place.
+- Never move or recreate a published version tag. Corrections after publication require a new semantic version; see [Release integrity](docs/release-integrity.md).
 - Keep `SKILL.md` frontmatter limited to `name` and `description`. Put conditional depth in `references/`, deterministic repeat work in `scripts/`, and output material in `assets/` only when each is genuinely required.
 - Keep the Runtime `description` platform-neutral so one source can be installed across agents. Platform-specific metadata belongs under `agents/` and must be safe for other agents to ignore.
 - Do not add another `SKILL.md` outside the Runtime Source. Repository scanners such as `npx skills` treat each discovered file as an installable Skill.

@@ -11,6 +11,7 @@ Shape UI Aesthetics treats an interface as one authored system: establish the pr
 - `releases/shape-ui-aesthetics/1.0.0/` — the accepted Codex runtime package and manifest.
 - `releases/shape-ui-aesthetics/distributions/1.0.0/` — the matching Codex and Claude Code archives.
 - `examples/nine-scenarios/` — nine self-contained qualification demonstrations.
+- `docs/release-integrity.md` — the one-time `1.0.0` portability rebaseline and the immutable-release rule that follows it.
 - `tools/validate_repository.py` — the reproducible public repository gate.
 - `evaluation/shape-ui-aesthetics/package_platform_distributions.py` — deterministic dual-platform packaging and validation.
 
@@ -47,6 +48,8 @@ npx skills@latest add suntianc/shape-ui-aesthetics \
 ```
 
 Omit `--global` for a project-local installation. The CLI installs from the Git repository; accepted release archives remain the auditable, checksum-backed distribution record.
+
+A global installation is owned at `~/.agents/skills/shape-ui-aesthetics`; supported agents discover that canonical copy directly or through symlinks. During migration, remove any older manually installed per-agent directory that would shadow it, then verify ownership and agent coverage with `npx skills@latest list -g --json`.
 
 Pin installation to the accepted `v1.0.0` Runtime Package path for reproducibility:
 
@@ -87,6 +90,8 @@ python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validat
 ## Validate source work and releases
 
 Candidate mode validates the editable Skill, the current Stable Baseline, and its platform distributions without requiring the evolving Source Package to equal that baseline. Release mode additionally requires byte-level parity between Source and the selected accepted release. Neither mode treats visual judgment as a mechanical pass/fail score.
+
+CI also compares the change with its base Git ref, rejects edits to any stable release version that already exists there, rejects movement of an existing `v*` tag, and validates every newly published version tag against its matching accepted release. A correction must be published under a new semantic version.
 
 ```bash
 python3 -m pip install -r requirements-dev.txt

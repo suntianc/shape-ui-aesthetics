@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import importlib.util
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -19,6 +20,7 @@ SOURCE = ROOT / "packages" / PACKAGE_NAME
 RELEASES = ROOT / "releases" / PACKAGE_NAME
 DISTRIBUTIONS = RELEASES / "distributions"
 PLATFORM_TOOL = ROOT / "evaluation" / PACKAGE_NAME / "package_platform_distributions.py"
+RELEASE_INTEGRITY = ROOT / "docs" / "release-integrity.md"
 FRONTMATTER = re.compile(r"\A---\n(?P<yaml>.*?)\n---\n", re.DOTALL)
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]*\]\((?P<target>[^)]+)\)")
 STABLE_VERSION = re.compile(r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)$")
@@ -163,6 +165,88 @@ def validate_public_skill_inventory(failures: list[str]) -> None:
         )
 
 
+def git_lines(*args: str) -> list[str]:
+    result = subprocess.run(
+        ("git", *args),
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line for line in result.stdout.splitlines() if line]
+
+
+def stable_directories_at(ref: str, path: str) -> set[str]:
+    try:
+        names = git_lines("ls-tree", "-d", "--name-only", f"{ref}:{path}")
+    except subprocess.CalledProcessError:
+        return set()
+    return {name for name in names if STABLE_VERSION.fullmatch(name)}
+
+
+def validate_release_immutability(base_ref: str, failures: list[str]) -> bool:
+    if base_ref.startswith("-") or "\x00" in base_ref:
+        failures.append(f"immutable release base ref is invalid: {base_ref!r}")
+        return False
+    if re.fullmatch(r"0{40}", base_ref):
+        return False
+    try:
+        git_lines(
+            "rev-parse",
+            "--verify",
+            "--end-of-options",
+            f"{base_ref}^{{commit}}",
+        )
+    except subprocess.CalledProcessError:
+        failures.append(f"immutable release base ref is unavailable: {base_ref}")
+        return False
+
+    release_versions = stable_directories_at(
+        base_ref,
+        f"releases/{PACKAGE_NAME}",
+    )
+    distribution_versions = stable_directories_at(
+        base_ref,
+        f"releases/{PACKAGE_NAME}/distributions",
+    )
+    try:
+        changed_rows = git_lines(
+            "diff",
+            "--name-status",
+            "--find-renames",
+            base_ref,
+            "--",
+            f"releases/{PACKAGE_NAME}",
+        )
+    except subprocess.CalledProcessError as error:
+        failures.append(f"could not compare immutable releases with {base_ref}: {error}")
+        return False
+
+    protected: set[str] = set()
+    release_prefix = f"releases/{PACKAGE_NAME}/"
+    distribution_prefix = f"{release_prefix}distributions/"
+    for row in changed_rows:
+        fields = row.split("\t")
+        for changed_path in fields[1:]:
+            if changed_path.startswith(distribution_prefix):
+                relative = changed_path.removeprefix(distribution_prefix)
+                version = relative.split("/", 1)[0]
+                if version in distribution_versions:
+                    protected.add(changed_path)
+                continue
+            if changed_path.startswith(release_prefix):
+                relative = changed_path.removeprefix(release_prefix)
+                version = relative.split("/", 1)[0]
+                if version in release_versions:
+                    protected.add(changed_path)
+    if protected:
+        failures.append(
+            "accepted release files are immutable; publish a new semantic version instead: "
+            f"{sorted(protected)}"
+        )
+    return True
+
+
 def validate_accepted_release(version: str, failures: list[str]) -> Path | None:
     release_root = RELEASES / version
     package = release_root / "package" / PACKAGE_NAME
@@ -233,14 +317,32 @@ def main() -> int:
         "--version",
         help="stable baseline or release version; defaults to the latest accepted stable version",
     )
+    parser.add_argument(
+        "--immutable-from",
+        metavar="GIT_REF",
+        help="reject changes to stable release versions that already exist at this Git ref",
+    )
     args = parser.parse_args()
     failures: list[str] = []
-    for required in (ROOT / "README.md", ROOT / "LICENSE", ROOT / "CONTRIBUTING.md", ROOT / "SECURITY.md", ROOT / "requirements-dev.txt"):
+    for required in (
+        ROOT / "README.md",
+        ROOT / "LICENSE",
+        ROOT / "CONTRIBUTING.md",
+        ROOT / "SECURITY.md",
+        ROOT / "requirements-dev.txt",
+        RELEASE_INTEGRITY,
+    ):
         if not required.is_file():
             failures.append(f"missing repository document: {required.relative_to(ROOT)}")
 
     validate_runtime_source(failures)
     validate_public_skill_inventory(failures)
+    immutability_checked = False
+    if args.immutable_from:
+        immutability_checked = validate_release_immutability(
+            args.immutable_from,
+            failures,
+        )
 
     if args.version and not STABLE_VERSION.fullmatch(args.version):
         failures.append(f"version is not a stable semantic version: {args.version}")
@@ -269,6 +371,13 @@ def main() -> int:
     print(f"stable_baseline={version}")
     print("baseline_integrity=true")
     print(f"source_release_parity={'true' if args.mode == 'release' else 'not_required'}")
+    if immutability_checked:
+        immutability_state = "checked"
+    elif args.immutable_from:
+        immutability_state = "not_applicable"
+    else:
+        immutability_state = "not_requested"
+    print(f"release_immutability={immutability_state}")
     print("platform_distributions=2")
     return 0
 
