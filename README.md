@@ -59,13 +59,14 @@ python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1
 python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.0.0
 ```
 
-## Verify a clone
+## Validate source work and releases
 
-The public check validates the source Skill's metadata and local references, confirms byte-level parity with the accepted release, and verifies both distribution archives against their manifests. It deliberately does not treat visual judgment as a mechanical pass/fail score.
+Candidate mode validates the editable Skill, the current Stable Baseline, and its platform distributions without requiring the evolving Source Package to equal that baseline. Release mode additionally requires byte-level parity between Source and the selected accepted release. Neither mode treats visual judgment as a mechanical pass/fail score.
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
-python3 tools/validate_repository.py
+python3 tools/validate_repository.py --mode candidate
+python3 tools/validate_repository.py --mode release --version 1.0.0
 ```
 
 ## Status

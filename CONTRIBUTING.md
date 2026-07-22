@@ -16,10 +16,10 @@
 
    ```bash
    python3 -m pip install -r requirements-dev.txt
-   python3 tools/validate_repository.py
+   python3 tools/validate_repository.py --mode candidate
    ```
 
-5. For a proposed release, run the relevant qualification and human aesthetic review before creating an immutable release artifact and its platform distributions.
+5. For a proposed release, run the relevant qualification and human aesthetic review before creating an immutable release artifact and its platform distributions. Then verify release parity with `python3 tools/validate_repository.py --mode release --version <version>`.
 
 ## Pull request expectations
 
