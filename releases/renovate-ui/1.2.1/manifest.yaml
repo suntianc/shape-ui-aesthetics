@@ -1,0 +1,20 @@
+package:
+  name: renovate-ui
+  version: 1.2.1
+  state: accepted
+  predecessor: null
+  source_candidate: phpmyadmin-trial-2026-07-26
+  note: Initial accepted release; co-published with shape-ui-aesthetics 1.2.1 as single-repo
+    single-version 1.2.1.
+files:
+- path: SKILL.md
+  sha256: 96fb746f6eef16c95a30f10448a13983911204fce73b3b638e18482a9bc35c67
+- path: references/intervention-grades.md
+  sha256: ac5de454027150842b219d32fbaf655045d748688910d935406c68d6256200c6
+- path: references/report-and-preview.md
+  sha256: 5f2cc80a4c2747445389977c5f3b22c81415553321c1e71874625c93d66014bb
+acceptance:
+  aesthetic: accepted
+  technical: passed
+  routing: passed
+  qualification: phpMyAdmin Rebuild trial (real docker instance); human-accepted 2026-07-26

@@ -1,0 +1,25 @@
+version: 1.2.1
+skill: renovate-ui
+predecessor: null  # initial release of this skill
+co_published_with: shape-ui-aesthetics 1.2.1  # single-repo single-version
+change_summary: >
+  Initial accepted release of renovate-ui, the graded-renovation workflow skill.
+  Co-published with shape-ui-aesthetics 1.2.1; the repository ships a single
+  semantic version (1.2.1) across both public skills.
+evidence:
+  trial:
+    - phpMyAdmin Rebuild (real docker instance, MariaDB + bookshop seed data):
+        evidence set (six surfaces, desktop+narrow), style-truth.json measurements
+        (Times fallback, 8 fragmented font sizes, 3 near-identical ink grays,
+        9-step continuous background-gray ladder), REPORT.md verdict
+        Rebuild with per-domain evidence, preview.html (rebuilt browse surface,
+        real data), compare.html before/after. Human-accepted 2026-07-26.
+feature_notes:
+  - Five-step consulting workflow (evidence → diagnosis → grade → report+preview → execute)
+  - Four intervention grades with evidence bars (Rebuild/Remodel/Calibrate/Elevate)
+  - Grading is a mandate, not a severity; under-grading called out as the failure mode the skill exists to prevent
+  - Aesthetic judgment delegated to shape-ui-aesthetics (nine domain lenses, exemplar recipe parameter bands)
+  - Cross-platform: web, mobile (simulator/device captures), desktop (window captures);
+    apps preview inside a device frame; unit translation to pt/dp; user-fed screenshots as fallback
+technical_integrity: validate_repository --mode release --version 1.2.1 PASS (2026-07-26)
+aesthetic_acceptance: granted by user in working session, 2026-07-26

@@ -21,6 +21,10 @@ PUBLIC_SKILLS = ("shape-ui-aesthetics", "renovate-ui")
 RELEASES = ROOT / "releases" / PACKAGE_NAME
 DISTRIBUTIONS = RELEASES / "distributions"
 PLATFORM_TOOL = ROOT / "evaluation" / PACKAGE_NAME / "package_platform_distributions.py"
+PACKAGE_PLATFORM_TOOLS = {
+    "shape-ui-aesthetics": PLATFORM_TOOL,
+    "renovate-ui": ROOT / "evaluation" / "renovate-ui" / "package_platform_distributions.py",
+}
 RELEASE_INTEGRITY = ROOT / "docs" / "release-integrity.md"
 FRONTMATTER = re.compile(r"\A---\n(?P<yaml>.*?)\n---\n", re.DOTALL)
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]*\]\((?P<target>[^)]+)\)")
@@ -96,11 +100,12 @@ def load_manifest(path: Path) -> dict:
     return value if isinstance(value, dict) else {}
 
 
-def accepted_versions() -> list[str]:
+def accepted_versions(skill: str = PACKAGE_NAME) -> list[str]:
     versions: list[str] = []
-    if not RELEASES.is_dir():
+    releases = ROOT / "releases" / skill
+    if not releases.is_dir():
         return versions
-    for path in RELEASES.iterdir():
+    for path in releases.iterdir():
         if not path.is_dir() or not STABLE_VERSION.fullmatch(path.name):
             continue
         manifest_path = path / "manifest.yaml"
@@ -112,7 +117,7 @@ def accepted_versions() -> list[str]:
             continue
         if (
             isinstance(metadata, dict)
-            and metadata.get("name") == PACKAGE_NAME
+            and metadata.get("name") == skill
             and metadata.get("version") == path.name
             and metadata.get("state") == "accepted"
         ):
@@ -120,14 +125,21 @@ def accepted_versions() -> list[str]:
     return sorted(versions, key=semantic_key)
 
 
-def platform_validation(root: Path, version: str) -> list[str]:
-    spec = importlib.util.spec_from_file_location("platform_distributions", PLATFORM_TOOL)
+def platform_validation(root: Path, version: str, skill: str = PACKAGE_NAME) -> list[str]:
+    tool = PACKAGE_PLATFORM_TOOLS.get(skill)
+    if tool is None or not tool.is_file():
+        return [f"platform distribution validator is missing for skill: {skill}"]
+    spec = importlib.util.spec_from_file_location(f"platform_distributions_{skill}", tool)
     if spec is None or spec.loader is None:
         return ["could not load platform distribution validator"]
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    return module.validate_directory(root, version, require_read_only=False)
+    # The shape-ui-aesthetics façade keeps validate_directory; the shared module exposes SPECS[skill].
+    validate_dir = getattr(module, "validate_directory", None)
+    if validate_dir is None:
+        validate_dir = module.SPECS[skill].validate_directory
+    return validate_dir(root, version, require_read_only=False)
 
 
 def validate_runtime_source(failures: list[str]) -> None:
@@ -258,20 +270,22 @@ def validate_release_immutability(base_ref: str, failures: list[str]) -> bool:
     return True
 
 
-def validate_accepted_release(version: str, failures: list[str]) -> Path | None:
-    release_root = RELEASES / version
-    package = release_root / "package" / PACKAGE_NAME
+def validate_accepted_release(version: str, failures: list[str], skill: str = PACKAGE_NAME) -> Path | None:
+    skill_releases = ROOT / "releases" / skill
+    release_root = skill_releases / version
+    package = release_root / "package" / skill
     manifest_path = release_root / "manifest.yaml"
-    distributions = DISTRIBUTIONS / version
+    skill_distributions = skill_releases / "distributions" / version
+    distributions = skill_distributions
 
     if not release_root.is_dir() or release_root.is_symlink():
-        failures.append(f"accepted release {version} is missing or invalid")
+        failures.append(f"accepted release {skill} {version} is missing or invalid")
         return None
     if not package.is_dir() or package.is_symlink():
-        failures.append(f"accepted release {version} package is missing or invalid")
+        failures.append(f"accepted release {skill} {version} package is missing or invalid")
         return None
     if not manifest_path.is_file() or manifest_path.is_symlink():
-        failures.append(f"accepted release {version} manifest is missing or invalid")
+        failures.append(f"accepted release {skill} {version} manifest is missing or invalid")
         return None
 
     try:
@@ -284,8 +298,8 @@ def validate_accepted_release(version: str, failures: list[str]) -> Path | None:
     if not isinstance(metadata, dict):
         failures.append(f"accepted release {version} package metadata is malformed")
     else:
-        if metadata.get("name") != PACKAGE_NAME:
-            failures.append(f"accepted release {version} package name mismatch")
+        if metadata.get("name") != skill:
+            failures.append(f"accepted release {skill} {version} package name mismatch")
         if metadata.get("version") != version:
             failures.append(f"accepted release {version} manifest version mismatch")
         if metadata.get("state") != "accepted":
@@ -306,13 +320,10 @@ def validate_accepted_release(version: str, failures: list[str]) -> Path | None:
     if manifest_files != file_map(package):
         failures.append(f"accepted release {version} files differ from its manifest")
 
-    if not PLATFORM_TOOL.is_file():
-        failures.append("platform distribution validator is missing")
-    else:
-        failures.extend(
-            f"platform distribution: {failure}"
-            for failure in platform_validation(distributions, version)
-        )
+    failures.extend(
+        f"platform distribution ({skill}): {failure}"
+        for failure in platform_validation(distributions, version, skill=skill)
+    )
     return package
 
 
@@ -358,17 +369,35 @@ def main() -> int:
 
     if args.version and not STABLE_VERSION.fullmatch(args.version):
         failures.append(f"version is not a stable semantic version: {args.version}")
-        version = ""
+        target_version = ""
     else:
-        versions = accepted_versions()
-        version = args.version or (versions[-1] if versions else "")
-        if not version:
-            failures.append("no accepted stable release could be discovered")
+        target_version = args.version
 
-    package = validate_accepted_release(version, failures) if version else None
-    if args.mode == "release" and package is not None and SOURCE.is_dir():
-        if file_map(SOURCE) != file_map(package):
-            failures.append(f"editable Runtime Package differs from accepted {version} release")
+    # Discover the latest accepted version across all public skills using that version.
+    # In release mode, every public skill must have an accepted release at that version
+    # and the editable source for each must match byte-for-byte.
+    primary_baseline = ""
+    for skill in PUBLIC_SKILLS:
+        versions = accepted_versions(skill)
+        if target_version and not versions:
+            # This skill has never been released at all (first release pending). Skip silently for both modes.
+            continue
+        version = target_version or (versions[-1] if versions else "")
+        if not version:
+            continue
+        if target_version and target_version not in versions:
+            # Skill exists but lacks the target version specifically.
+            if args.mode == "release":
+                failures.append(f"accepted release {skill} {target_version} is missing or invalid")
+            continue
+        if skill == PUBLIC_SKILLS[0]:
+            primary_baseline = version
+        package = validate_accepted_release(version, failures, skill=skill)
+        if args.mode == "release" and package is not None:
+            src = ROOT / "packages" / skill
+            if src.is_dir() and file_map(src) != file_map(package):
+                failures.append(f"editable {skill} package differs from accepted {version} release")
+    version = primary_baseline
 
     if failures:
         print("FAIL")

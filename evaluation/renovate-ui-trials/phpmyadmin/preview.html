@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>phpMyAdmin · bookshop.books — Rebuild 预览</title>
+<style>
+  :root {
+    --ground: #faf9f7; --surface: #ffffff;
+    --line: #e7e5e1; --line-soft: #f0eeea;
+    --ink: #1c1b19; --ink-2: #77736c;
+    --accent: #d97516; --accent-soft: rgba(217, 117, 22, 0.07);
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font: 15px/1.55 var(--sans); color: var(--ink); background: var(--ground); }
+  a { color: inherit; text-decoration: none; }
+
+  .app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+  /* ── navigation tree ─────────────────────────── */
+  .nav { border-right: 1px solid var(--line); padding: 20px 0; background: var(--ground); }
+  .brand { display: flex; align-items: baseline; gap: 8px; padding: 0 20px 18px; }
+  .brand b { font-size: 15px; letter-spacing: -0.2px; }
+  .brand span { font-size: 12px; color: var(--ink-2); }
+  .nav h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); font-weight: 500; padding: 14px 20px 6px; }
+  .tree { list-style: none; font-size: 13px; }
+  .tree a { display: flex; align-items: center; gap: 7px; padding: 5px 20px; color: var(--ink-2); }
+  .tree a:hover { color: var(--ink); background: var(--line-soft); }
+  .tree .db > a { color: var(--ink); font-weight: 500; }
+  .tree .tbl a { padding-left: 38px; font-family: var(--mono); font-size: 12.5px; }
+  .tree .current a { color: var(--ink); background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+  .chev { display: inline-block; width: 8px; color: var(--ink-2); font-size: 9px; }
+
+  /* ── main column ─────────────────────────────── */
+  .main { padding: 0 32px 48px; min-width: 0; }
+  .crumbs { display: flex; align-items: center; gap: 8px; padding: 18px 0 14px; font-size: 13px; color: var(--ink-2); }
+  .crumbs code { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  .crumbs .sep { color: var(--line); }
+
+  .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .tabs a { padding: 9px 2px 11px; font-size: 14px; color: var(--ink-2); position: relative; }
+  .tabs a:hover { color: var(--ink); }
+  .tabs a.on { color: var(--ink); font-weight: 500; }
+  .tabs a.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
+
+  .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
+  .status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4c9a5f; }
+  .status code { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+
+  .sqlbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; }
+  .sqlbar code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  .sqlbar code .kw { color: var(--accent); }
+  .sqlbar .acts { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); flex-shrink: 0; }
+  .sqlbar .acts a:hover { color: var(--ink); }
+
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar input[type="search"] {
+    flex: 1; min-width: 200px; max-width: 340px; font: 13.5px var(--sans); color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 7px 12px; outline: none;
+  }
+  .toolbar input:focus { border-color: var(--accent); }
+  .toolbar select { font: 13px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; }
+  .toolbar .spacer { flex: 1; }
+  .btn { font: 500 13.5px var(--sans); border-radius: 7px; padding: 7px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--ink-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── data table ──────────────────────────────── */
+  .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    text-align: left; font-size: 11.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--ink-2); padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  thead th.num, td.num { text-align: right; }
+  tbody td { padding: 11px 16px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--accent-soft); }
+  td.mono, th.mono { font-family: var(--mono); font-size: 13px; }
+  td.dim { color: var(--ink-2); }
+  td .title { font-weight: 500; }
+  .rowacts { opacity: 0; display: flex; gap: 12px; font-size: 12.5px; color: var(--ink-2); transition: opacity 0.15s ease-out; }
+  tr:hover .rowacts { opacity: 1; }
+  .rowacts a:hover { color: var(--ink); }
+  .rowacts a.danger:hover { color: #b3382c; }
+  input[type="checkbox"] { accent-color: var(--accent); }
+
+  .foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-size: 13px; color: var(--ink-2); border-top: 1px solid var(--line); }
+  .foot .pages { display: flex; gap: 4px; }
+  .foot .pages a { padding: 3px 9px; border-radius: 6px; }
+  .foot .pages a.on { background: var(--line-soft); color: var(--ink); font-weight: 500; }
+  .foot .pages a:hover { color: var(--ink); }
+
+  .selbar { display: flex; gap: 16px; align-items: center; font-size: 13px; color: var(--ink-2); margin-top: 14px; }
+  .selbar a:hover { color: var(--ink); }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .nav { display: none; }
+    .main { padding: 0 16px 32px; }
+    .sqlbar { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="nav">
+    <div class="brand"><b>phpMyAdmin</b><span>pma-db</span></div>
+    <h2>数据库</h2>
+    <ul class="tree">
+      <li class="db"><a><span class="chev">▾</span> bookshop</a>
+        <ul class="tree">
+          <li class="tbl current"><a>books</a></li>
+          <li class="tbl"><a>orders</a></li>
+        </ul>
+      </li>
+      <li class="db"><a><span class="chev">▸</span> information_schema</a></li>
+      <li class="db"><a><span class="chev">▸</span> mysql</a></li>
+      <li class="db"><a><span class="chev">▸</span> performance_schema</a></li>
+      <li class="db"><a><span class="chev">▸</span> sys</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <nav class="crumbs">
+      <span>pma-db</span><span class="sep">/</span>
+      <span>bookshop</span><span class="sep">/</span>
+      <code>books</code>
+    </nav>
+
+    <nav class="tabs">
+      <a class="on">浏览</a><a>结构</a><a>SQL</a><a>搜索</a><a>插入</a><a>导出</a><a>导入</a><a>操作</a>
+    </nav>
+
+    <p class="status"><span class="dot"></span>显示第 0–5 行,共 <code>6</code> 行 · 查询用时 <code>0.0001s</code></p>
+
+    <div class="sqlbar">
+      <code><span class="kw">SELECT</span> * <span class="kw">FROM</span> `books`</code>
+      <span class="acts"><a>编辑</a><a>解析</a><a>创建 PHP 代码</a><a>刷新</a></span>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" placeholder="在表中过滤…">
+      <select><option>25 行</option><option>50 行</option><option>100 行</option></select>
+      <select><option>排序:无</option><option>price ↑</option><option>published ↓</option></select>
+      <span class="spacer"></span>
+      <button class="btn">导出结果</button>
+      <button class="btn primary">新建查询</button>
+    </div>
+
+    <div class="sheet">
+      <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox"></th>
+            <th class="mono num">id</th>
+            <th>title</th>
+            <th>author</th>
+            <th class="num">price</th>
+            <th class="num">stock</th>
+            <th>published</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><input type="checkbox"></td><td class="mono num dim">1</td><td><span class="title">The Design of Everyday Things</span></td><td>Don Norman</td><td class="mono num">89.00</td><td class="mono num">42</td><td class="mono dim">2013-11-05</td><td><span class="rowacts"><a>编辑</a><a>复制</a><a class="danger">删除</a></span></td></tr>
+          <tr><td><input type="checkbox"></td><td class="mono num dim">2</td><td><span class="title">Experiencing Architecture</span></td><td>Steen Eiler Rasmussen</td><td class="mono num">56.50</td><td class="mono num">17</td><td class="mono dim">1962-03-01</td><td><span class="rowacts"><a>编辑</a><a>复制</a><a class="danger">删除</a></span></td></tr>
+          <tr><td><input type="checkbox"></td><td class="mono num dim">3</td><td><span class="title">Interaction of Color</span></td><td>Josef Albers</td><td class="mono num">78.00</td><td class="mono num">8</td><td class="mono dim">1963-06-15</td><td><span class="rowacts"><a>编辑</a><a>复制</a><a class="danger">删除</a></span></td></tr>
+          <tr><td><input type="checkbox"></td><td class="mono num dim">4</td><td><span class="title">Thinking with Type</span></td><td>Ellen Lupton</td><td class="mono num">65.00</td><td class="mono num">23</td><td class="mono dim">2010-04-10</td><td><span class="rowacts"><a>编辑</a><a>复制</a><a class="danger">删除</a></span></td></tr>
+          <tr><td><input type="checkbox"></td><td class="mono num dim">5</td><td><span class="title">Grid Systems in Graphic Design</span></td><td>Josef Müller-Brockmann</td><td class="mono num">128.00</td><td class="mono num">5</td><td class="mono dim">1981-01-01</td><td><span class="rowacts"><a>编辑</a><a>复制</a><a class="danger">删除</a></span></td></tr>
+          <tr><td><input type="checkbox"></td><td class="mono num dim">6</td><td><span class="title">The Elements of Typographic Style</span></td><td>Robert Bringhurst</td><td class="mono num">98.00</td><td class="mono num">31</td><td class="mono dim">1992-08-20</td><td><span class="rowacts"><a>编辑</a><a>复制</a><a class="danger">删除</a></span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="foot">
+        <span>6 行 · <code style="font-family:var(--mono);font-size:12px">books</code></span>
+        <nav class="pages"><a>‹</a><a class="on">1</a><a>›</a></nav>
+      </div>
+    </div>
+
+    <div class="selbar">
+      <label><input type="checkbox"> 全选</label>
+      <span>选中项:</span><a>编辑</a><a>复制</a><a>删除</a><a>导出</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

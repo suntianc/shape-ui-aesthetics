@@ -1,0 +1,21 @@
+package:
+  name: renovate-ui
+  version: 1.2.1
+  source_release: releases/renovate-ui/1.2.1
+  state: accepted-derived
+distributions:
+- platform: codex
+  archive: renovate-ui-1.2.1-codex.zip
+  archive_sha256: 3da20108836fefbb09587483dc30b8ea21efd5cc17454ce923ca88f40f6ca128
+  runtime_files: 3
+  skill_sha256: 96fb746f6eef16c95a30f10448a13983911204fce73b3b638e18482a9bc35c67
+  excluded: []
+- platform: claude-code
+  archive: renovate-ui-1.2.1-claude-code.zip
+  archive_sha256: 3da20108836fefbb09587483dc30b8ea21efd5cc17454ce923ca88f40f6ca128
+  runtime_files: 3
+  skill_sha256: 96fb746f6eef16c95a30f10448a13983911204fce73b3b638e18482a9bc35c67
+  excluded: []
+  adaptation: identical to Codex (pure-portable skill)
+shared_payload:
+  skill_byte_identical: true

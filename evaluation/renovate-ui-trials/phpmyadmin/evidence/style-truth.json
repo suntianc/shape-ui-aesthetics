@@ -1,0 +1,217 @@
+{
+  "body": {
+    "font-family": "sans-serif",
+    "font-size": "13.12px",
+    "font-weight": "400",
+    "line-height": "19.68px",
+    "letter-spacing": "normal",
+    "color": "rgb(68, 68, 68)",
+    "background-color": "rgb(255, 255, 255)"
+  },
+  "th": {
+    "font-family": "sans-serif",
+    "font-size": "13.12px",
+    "font-weight": "700",
+    "line-height": "19.68px",
+    "letter-spacing": "normal",
+    "color": "rgb(0, 0, 0)",
+    "background-color": "rgba(0, 0, 0, 0)"
+  },
+  "td": {
+    "font-family": "sans-serif",
+    "font-size": "13.12px",
+    "font-weight": "400",
+    "line-height": "19.68px",
+    "letter-spacing": "normal",
+    "color": "rgb(0, 0, 0)",
+    "background-color": "rgb(255, 255, 255)"
+  },
+  "navItem": {
+    "font-family": "sans-serif",
+    "font-size": "13.12px",
+    "font-weight": "400",
+    "line-height": "19.68px",
+    "letter-spacing": "normal",
+    "color": "rgb(35, 90, 129)",
+    "background-color": "rgba(0, 0, 0, 0)"
+  },
+  "tabActive": {
+    "font-family": "sans-serif",
+    "font-size": "13.12px",
+    "font-weight": "700",
+    "line-height": "19.68px",
+    "letter-spacing": "normal",
+    "color": "rgb(0, 0, 0)",
+    "background-color": "rgb(255, 255, 255)"
+  },
+  "button": {
+    "font-family": "sans-serif",
+    "font-size": "13.12px",
+    "font-weight": "400",
+    "line-height": "15.088px",
+    "letter-spacing": "normal",
+    "color": "rgb(68, 68, 68)",
+    "background-color": "rgb(242, 242, 242)"
+  },
+  "fontFamilies": [
+    "Times",
+    "sans-serif",
+    "monospace",
+    "Monaco"
+  ],
+  "fontSizeHistogram": [
+    [
+      "13.12px",
+      1497
+    ],
+    [
+      "16px",
+      57
+    ],
+    [
+      "12px",
+      42
+    ],
+    [
+      "16.4px",
+      14
+    ],
+    [
+      "19.68px",
+      12
+    ],
+    [
+      "24px",
+      6
+    ],
+    [
+      "20.992px",
+      4
+    ],
+    [
+      "15.744px",
+      2
+    ],
+    [
+      "11.48px",
+      2
+    ],
+    [
+      "40px",
+      1
+    ],
+    [
+      "11.808px",
+      1
+    ]
+  ],
+  "textColorHistogram": [
+    [
+      "rgb(0, 0, 0)",
+      118
+    ],
+    [
+      "rgb(68, 68, 68)",
+      113
+    ],
+    [
+      "rgb(51, 51, 51)",
+      54
+    ],
+    [
+      "rgb(255, 255, 255)",
+      7
+    ],
+    [
+      "rgba(68, 68, 68, 0.75)",
+      6
+    ],
+    [
+      "rgb(153, 153, 153)",
+      6
+    ],
+    [
+      "rgb(85, 85, 85)",
+      5
+    ],
+    [
+      "rgb(35, 90, 129)",
+      5
+    ],
+    [
+      "rgb(58, 126, 173)",
+      5
+    ],
+    [
+      "rgb(119, 0, 136)",
+      2
+    ],
+    [
+      "rgb(255, 0, 255)",
+      1
+    ],
+    [
+      "rgb(0, 85, 170)",
+      1
+    ]
+  ],
+  "backgroundHistogram": [
+    [
+      "rgb(255, 255, 255)",
+      167
+    ],
+    [
+      "rgb(221, 221, 221)",
+      15
+    ],
+    [
+      "rgb(238, 238, 238)",
+      12
+    ],
+    [
+      "rgb(242, 242, 242)",
+      6
+    ],
+    [
+      "rgb(204, 204, 204)",
+      3
+    ],
+    [
+      "rgb(211, 220, 227)",
+      2
+    ],
+    [
+      "rgb(170, 170, 170)",
+      1
+    ],
+    [
+      "rgba(0, 0, 0, 0.6)",
+      1
+    ],
+    [
+      "rgb(243, 243, 243)",
+      1
+    ],
+    [
+      "rgb(187, 187, 187)",
+      1
+    ],
+    [
+      "rgb(232, 238, 241)",
+      1
+    ],
+    [
+      "rgb(136, 136, 136)",
+      1
+    ],
+    [
+      "rgb(248, 249, 250)",
+      1
+    ],
+    [
+      "rgb(102, 102, 102)",
+      1
+    ]
+  ],
+  "sampledElements": 1638
+}

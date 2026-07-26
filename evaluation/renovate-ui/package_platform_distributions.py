@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Build and validate platform archives for the shape-ui-aesthetics Runtime Package.
+"""Build and validate platform archives for the renovate-ui Runtime Package.
 
 Thin façade over the shared per-skill packaging pipeline in
-``tools/release/packaging.py``. Kept for backward compatibility with the
-documented build/validate commands in README.md and existing release tooling.
+``tools/release/packaging.py``.
 """
 
 from __future__ import annotations
@@ -11,11 +10,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Re-export the shared implementation so this file remains the documented entry point.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tools.release.packaging import PackageSpec, SPECS  # noqa: E402
+from tools.release.packaging import SPECS  # noqa: E402
 
-SPEC = SPECS["shape-ui-aesthetics"]
+SPEC = SPECS["renovate-ui"]
 
 
 def main() -> int:

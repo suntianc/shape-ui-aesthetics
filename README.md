@@ -37,10 +37,10 @@ Recipes evolve through use: consequential human review verdicts are folded back 
 ## Repository layout
 
 - `packages/shape-ui-aesthetics/` — the Runtime Package source for the authoring Skill.
-- `packages/renovate-ui/` — the renovation-workflow Skill: grades an existing UI into one of four intervention grades (Rebuild / Remodel / Calibrate / Elevate), delivers an evidence-backed report plus an HTML preview before touching code, and delegates aesthetic judgment to shape-ui-aesthetics. Works across web, mobile, and desktop surfaces. Pre-release; not yet part of any accepted release.
+- `packages/renovate-ui/` — the renovation-workflow Skill: grades an existing UI into one of four intervention grades (Rebuild / Remodel / Calibrate / Elevate), delivers an evidence-backed report plus an HTML preview before touching code, and delegates aesthetic judgment to shape-ui-aesthetics. Works across web, mobile, and desktop surfaces. Accepted in release 1.2.1.
 - `evaluation/shape-ui-aesthetics/` — package-external qualification inputs and local exploratory runs; it never ships in the Skill payload.
-- `releases/shape-ui-aesthetics/1.2.0/` — the current accepted runtime package and manifest (`1.0.0/` and `1.1.0/` remain as immutable predecessors).
-- `releases/shape-ui-aesthetics/distributions/1.2.0/` — the matching Codex and Claude Code archives.
+- `releases/shape-ui-aesthetics/1.2.1/` — the current accepted runtime package and manifest (`1.0.0/`, `1.1.0/`, and `1.2.0/` remain as immutable predecessors).
+- `releases/shape-ui-aesthetics/distributions/1.2.1/` — the matching Codex and Claude Code archives.
 - `examples/nine-scenarios/` — nine self-contained qualification demonstrations.
 - `docs/release-integrity.md` — the one-time `1.0.0` portability rebaseline and the immutable-release rule that follows it.
 - `tools/validate_repository.py` — the reproducible public repository gate.
@@ -62,27 +62,27 @@ Omit `--global` for a project-local installation. The CLI installs from the Git 
 
 A global installation is owned at `~/.agents/skills/shape-ui-aesthetics`; supported agents discover that canonical copy directly or through symlinks. During migration, remove any older manually installed per-agent directory that would shadow it, then verify ownership and agent coverage with `npx skills@latest list -g --json`.
 
-Pin installation to the accepted `v1.2.0` Runtime Package path for reproducibility:
+Pin installation to the accepted `v1.2.1` Runtime Package path for reproducibility:
 
 ```bash
 npx skills@latest add \
-  https://github.com/suntianc/shape-ui-aesthetics/tree/v1.2.0/packages/shape-ui-aesthetics \
+  https://github.com/suntianc/shape-ui-aesthetics/tree/v1.2.1/packages/shape-ui-aesthetics \
   --skill shape-ui-aesthetics \
   --agent '*' \
   --global \
   --yes
 ```
 
-## Install the 1.2.0 archives
+## Install the 1.2.1 archives
 
-Both `1.2.0` archives contain the same platform-neutral `SKILL.md`, references, capability contracts, and exemplar recipes. The Codex archive additionally includes `agents/openai.yaml`; the Claude Code archive omits only that Codex-specific UI metadata.
+Both `1.2.1` archives contain the same platform-neutral `SKILL.md`, references, capability contracts, and exemplar recipes. The Codex archive additionally includes `agents/openai.yaml`; the Claude Code archive omits only that Codex-specific UI metadata.
 
 ```bash
 # Claude Code
-unzip releases/shape-ui-aesthetics/distributions/1.2.0/shape-ui-aesthetics-1.2.0-claude-code.zip -d ~/.claude/skills
+unzip releases/shape-ui-aesthetics/distributions/1.2.1/shape-ui-aesthetics-1.2.1-claude-code.zip -d ~/.claude/skills
 
 # Codex
-unzip releases/shape-ui-aesthetics/distributions/1.2.0/shape-ui-aesthetics-1.2.0-codex.zip -d ~/.codex/skills
+unzip releases/shape-ui-aesthetics/distributions/1.2.1/shape-ui-aesthetics-1.2.1-codex.zip -d ~/.codex/skills
 ```
 
 Inspect an existing installation before replacing it. Do not use the rejected legacy package as a rollback target.
@@ -110,8 +110,8 @@ https://github.com/user-attachments/assets/b7ac16cc-34f6-4e12-ae62-29ea714a1386
 Build only from an accepted immutable release. The builder refuses to overwrite an existing version:
 
 ```bash
-python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1.2.0
-python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.2.0
+python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1.2.1
+python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.2.1
 ```
 
 `SKILL.md` remains byte-identical across Codex and Claude Code archives; only Codex-specific `agents/openai.yaml` is omitted from the Claude Code archive.
@@ -125,14 +125,14 @@ CI also compares the change with its base Git ref, rejects edits to any stable r
 ```bash
 python3 -m pip install -r requirements-dev.txt
 python3 tools/validate_repository.py --mode candidate
-python3 tools/validate_repository.py --mode release --version 1.2.0
+python3 tools/validate_repository.py --mode release --version 1.2.1
 ```
 
 ## Status
 
 `1.1.0` introduced the exemplar recipe layer — distilled from a measured design corpus where every parameter band is backed by at least two reference sites — on top of the unchanged `1.0.0` Stable Spine and 32-capability roster. Its recipe trials (two open-source product pages plus a cross-model comparison on gpt-5.6-sol, gemini-3.6-flash, and MiniMax-M3) received human aesthetic acceptance on 2026-07-26.
 
-`1.2.0` is the current accepted release. It folds the usage-driven evolution of the recipe layer into the package: measured CJK typography bands (five-site article measurements establishing the two-tier line-height model), measured motion-duration tiers (per-element computed-style surveys across seven sites), the imagery-as-material recipe, and the mandatory asset-strategy declaration — validated across five behavioral trials on gpt-5.6-sol, covering both the *generate* branch (thesis-derived prompt generation) and the defended *deliberately none* branch.
+`1.2.1` is the current accepted release. It folds the usage-driven evolution of the recipe layer into the package: measured CJK typography bands (five-site article measurements establishing the two-tier line-height model), measured motion-duration tiers (per-element computed-style surveys across seven sites), the imagery-as-material recipe, and the mandatory asset-strategy declaration — validated across five behavioral trials on gpt-5.6-sol, covering both the *generate* branch (thesis-derived prompt generation) and the defended *deliberately none* branch.
 
 The measured corpus itself (screenshots, extracted tokens, per-site profiles) is a local research asset and is not distributed with this repository; recipes cite reference sites by name and capture date, keeping the Runtime Package self-contained. Human aesthetic acceptance remains the final gate for every change.
 
