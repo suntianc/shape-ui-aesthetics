@@ -65,6 +65,8 @@ Scanning is not a nine-step workflow. A quiet lens stays unloaded; a material si
 
 Translate the reconciled direction into the medium required by the assignment. When the direction matches a proven system family, consult the [exemplar recipe index](references/index-exemplar-recipes.md) for measured parameter bands and disciplines drawn from living reference sites; recipes are vocabulary, not defaults — adopt, adapt, or reject them in service of the thesis, and never copy a single exemplar wholesale. Preserve real content, protected functionality, state truth, and the Change Boundary. Make the protagonist and ritual load-bearing in structure and behavior. Carry the visual grammar across responsive states, empty/loading/error/success states, input modes, and reduced-motion behavior.
 
+Treat imagery as a first-class material of the system, not an afterthought. Reference-grade interfaces routinely delegate color, material, and atmosphere to photography, illustration, or rendered objects; a page assembled from text and CSS alone is a deliberate choice, never a silent default. When the direction calls for imagery, survey the environment for available image-generation or asset tools and use them: derive every prompt from the established thesis — color temperature, light, material, composition — so all generated assets belong to one world, and reject any asset that fails the system before it ships. When no tool is available, place intent-annotated placeholders rather than degrading to decorative CSS substitutes.
+
 When implementation is in scope, build or edit the artifact rather than stopping at adjectives or a mood board. Inspect the result in its actual medium and at consequential viewport, device, and interaction states.
 
 ## Critique before delivery
