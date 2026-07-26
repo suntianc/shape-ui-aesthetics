@@ -70,3 +70,8 @@ These are bands, not single values.
 5. **Image-text fence-sitting:** unwilling to let photography bear the weight at 95:5 like ndc.co.jp, unwilling to stand on pure typography like paco.me, so each section gets one mechanical mid-shot — both ends of the spectrum hold; the stanceless middle does not.
 6. **Rendered-object hodgepodge:** a different 3D style per section (isometric illustration + glassmorphism + photoreal renders interleaved) — contrast resend.com's single glowing form reused sitewide.
 7. **Single-site cloning:** lifting nothing.tech's dot-matrix watermark + frosted-glass cards + four lighting setups wholesale is cloning, not distillation. What transfers from this recipe is the logic — imagery supplies color and material under one world while the layout yields; that aesop.com's amber, toraya-group.co.jp's seasonal backing papers, and resend.com's 3D highlight parameters all differ is the proof.
+
+
+## Usage rulings
+
+- 2026-07-26, Tandoor trial, second human review round: when no real product screenshot exists, filling a feature card's mid-zone evidence area with a low-chroma abstract DOM schematic (instead of a fabricated UI screenshot) was approved in direction, but ruled insufficient in detail on its own. Ruling: schematics must ship as **schematic plus micro-caption** — each functional schematic carries explanatory micro-copy at the lowest type tier so the zone explains itself; captions stay inside the factual boundary (no invented dish names or data) and must not break the color ledger. Generalized rule: neither placeholders nor schematics may be mute graphics — a substitute visual without explanatory text hides a detail debt inside a style choice.
