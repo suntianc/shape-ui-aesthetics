@@ -36,7 +36,8 @@ Recipes evolve through use: consequential human review verdicts are folded back 
 
 ## Repository layout
 
-- `packages/shape-ui-aesthetics/` — the single editable Runtime Package source.
+- `packages/shape-ui-aesthetics/` — the Runtime Package source for the authoring Skill.
+- `packages/renovate-ui/` — the renovation-workflow Skill: grades an existing UI into one of four intervention grades (Rebuild / Remodel / Calibrate / Elevate), delivers an evidence-backed report plus an HTML preview before touching code, and delegates aesthetic judgment to shape-ui-aesthetics. Works across web, mobile, and desktop surfaces. Pre-release; not yet part of any accepted release.
 - `evaluation/shape-ui-aesthetics/` — package-external qualification inputs and local exploratory runs; it never ships in the Skill payload.
 - `releases/shape-ui-aesthetics/1.2.0/` — the current accepted runtime package and manifest (`1.0.0/` and `1.1.0/` remain as immutable predecessors).
 - `releases/shape-ui-aesthetics/distributions/1.2.0/` — the matching Codex and Claude Code archives.
@@ -47,7 +48,7 @@ Recipes evolve through use: consequential human review verdicts are folded back 
 
 ## Install across agents
 
-The editable Runtime Source uses platform-neutral discovery metadata and is the repository's only discoverable Skill. Install it with the Vercel Labs Skills CLI for any supported agent:
+Each package under `packages/` uses platform-neutral discovery metadata. Install the authoring Skill with the Vercel Labs Skills CLI for any supported agent:
 
 ```bash
 npx skills@latest add suntianc/shape-ui-aesthetics \

@@ -17,6 +17,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_NAME = "shape-ui-aesthetics"
 SOURCE = ROOT / "packages" / PACKAGE_NAME
+PUBLIC_SKILLS = ("shape-ui-aesthetics", "renovate-ui")
 RELEASES = ROOT / "releases" / PACKAGE_NAME
 DISTRIBUTIONS = RELEASES / "distributions"
 PLATFORM_TOOL = ROOT / "evaluation" / PACKAGE_NAME / "package_platform_distributions.py"
@@ -51,7 +52,7 @@ def within(root: Path, path: Path) -> bool:
     return True
 
 
-def validate_frontmatter(path: Path, failures: list[str]) -> None:
+def validate_frontmatter(path: Path, failures: list[str], expected_name: str = PACKAGE_NAME) -> None:
     text = path.read_text(encoding="utf-8")
     match = FRONTMATTER.match(text)
     if not match:
@@ -61,7 +62,7 @@ def validate_frontmatter(path: Path, failures: list[str]) -> None:
     if set(metadata or {}) != {"name", "description"}:
         failures.append("Runtime SKILL.md frontmatter must contain only name and description")
         return
-    if metadata["name"] != PACKAGE_NAME:
+    if metadata["name"] != expected_name:
         failures.append("Runtime SKILL.md name does not match its directory")
     if not isinstance(metadata["description"], str) or not metadata["description"].strip():
         failures.append("Runtime SKILL.md description is empty")
@@ -149,13 +150,23 @@ def validate_runtime_source(failures: list[str]) -> None:
     validate_links(SOURCE, failures)
 
 
+def validate_additional_public_skills(failures: list[str]) -> None:
+    for name in PUBLIC_SKILLS:
+        if name == PACKAGE_NAME:
+            continue
+        skill_path = ROOT / "packages" / name / "SKILL.md"
+        if not skill_path.is_file():
+            continue
+        validate_frontmatter(skill_path, failures, expected_name=name)
+
+
 def validate_public_skill_inventory(failures: list[str]) -> None:
     unexpected: list[str] = []
     for path in ROOT.rglob("SKILL.md"):
         relative = path.relative_to(ROOT)
         if relative.parts[0] in NON_PUBLIC_ROOTS:
             continue
-        if path == SOURCE / "SKILL.md":
+        if any(path == ROOT / "packages" / name / "SKILL.md" for name in PUBLIC_SKILLS):
             continue
         unexpected.append(relative.as_posix())
     if unexpected:
@@ -337,6 +348,7 @@ def main() -> int:
 
     validate_runtime_source(failures)
     validate_public_skill_inventory(failures)
+    validate_additional_public_skills(failures)
     immutability_checked = False
     if args.immutable_from:
         immutability_checked = validate_release_immutability(
