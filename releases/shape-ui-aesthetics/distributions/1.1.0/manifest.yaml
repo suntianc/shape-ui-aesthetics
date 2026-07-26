@@ -1,0 +1,26 @@
+package:
+  name: shape-ui-aesthetics
+  version: 1.1.0
+  source_release: releases/shape-ui-aesthetics/1.1.0
+  state: accepted-derived
+distributions:
+- platform: codex
+  archive: shape-ui-aesthetics-1.1.0-codex.zip
+  archive_sha256: fec098b2d0139f17e54e8fd3cbc0c48c8729094db928558e3bee2b7151b03f30
+  runtime_files: 51
+  skill_sha256: 89b5dd9d71c098ec1101426ceb9d54a423b429dcc925a8a14963fe38d386e49c
+  excluded: []
+- platform: claude-code
+  archive: shape-ui-aesthetics-1.1.0-claude-code.zip
+  archive_sha256: 1df4d44b2675f33197ce24c448a00e38b18bb3c5dbfc60ab1437c6bc57293dd1
+  runtime_files: 50
+  skill_sha256: 89b5dd9d71c098ec1101426ceb9d54a423b429dcc925a8a14963fe38d386e49c
+  excluded:
+  - agents/openai.yaml
+  adaptation: omit Codex-only agents/openai.yaml; preserve portable SKILL.md
+shared_payload:
+  capability_contracts: 32
+  domain_indexes: 9
+  cross_cutting_references: 2
+  references_byte_identical: true
+  skill_byte_identical: true

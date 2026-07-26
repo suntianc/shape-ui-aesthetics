@@ -18,3 +18,6 @@ AGENTS.md
 evaluation/shape-ui-aesthetics/*
 !evaluation/shape-ui-aesthetics/package_platform_distributions.py
 releases/shape-ui-aesthetics/1.0.0-rc.1/
+
+# Local design-site corpus (third-party screenshots; research asset, never shipped)
+corpus/

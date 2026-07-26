@@ -8,8 +8,8 @@ Shape UI Aesthetics treats an interface as one authored system: establish the pr
 
 - `packages/shape-ui-aesthetics/` — the single editable Runtime Package source.
 - `evaluation/shape-ui-aesthetics/` — package-external qualification inputs and local exploratory runs; it never ships in the Skill payload.
-- `releases/shape-ui-aesthetics/1.0.0/` — the accepted Codex runtime package and manifest.
-- `releases/shape-ui-aesthetics/distributions/1.0.0/` — the matching Codex and Claude Code archives.
+- `releases/shape-ui-aesthetics/1.1.0/` — the current accepted runtime package and manifest (`1.0.0/` remains as the immutable predecessor).
+- `releases/shape-ui-aesthetics/distributions/1.1.0/` — the matching Codex and Claude Code archives.
 - `examples/nine-scenarios/` — nine self-contained qualification demonstrations.
 - `docs/release-integrity.md` — the one-time `1.0.0` portability rebaseline and the immutable-release rule that follows it.
 - `tools/validate_repository.py` — the reproducible public repository gate.
@@ -51,27 +51,27 @@ Omit `--global` for a project-local installation. The CLI installs from the Git 
 
 A global installation is owned at `~/.agents/skills/shape-ui-aesthetics`; supported agents discover that canonical copy directly or through symlinks. During migration, remove any older manually installed per-agent directory that would shadow it, then verify ownership and agent coverage with `npx skills@latest list -g --json`.
 
-Pin installation to the accepted `v1.0.0` Runtime Package path for reproducibility:
+Pin installation to the accepted `v1.1.0` Runtime Package path for reproducibility:
 
 ```bash
 npx skills@latest add \
-  https://github.com/suntianc/shape-ui-aesthetics/tree/v1.0.0/packages/shape-ui-aesthetics \
+  https://github.com/suntianc/shape-ui-aesthetics/tree/v1.1.0/packages/shape-ui-aesthetics \
   --skill shape-ui-aesthetics \
   --agent '*' \
   --global \
   --yes
 ```
 
-## Install the 1.0.0 archives
+## Install the 1.1.0 archives
 
-Both `1.0.0` archives contain the same platform-neutral `SKILL.md`, references, and capability contracts. The Codex archive additionally includes `agents/openai.yaml`; the Claude Code archive omits only that Codex-specific UI metadata.
+Both `1.1.0` archives contain the same platform-neutral `SKILL.md`, references, capability contracts, and exemplar recipes. The Codex archive additionally includes `agents/openai.yaml`; the Claude Code archive omits only that Codex-specific UI metadata.
 
 ```bash
 # Claude Code
-unzip releases/shape-ui-aesthetics/distributions/1.0.0/shape-ui-aesthetics-1.0.0-claude-code.zip -d ~/.claude/skills
+unzip releases/shape-ui-aesthetics/distributions/1.1.0/shape-ui-aesthetics-1.1.0-claude-code.zip -d ~/.claude/skills
 
 # Codex
-unzip releases/shape-ui-aesthetics/distributions/1.0.0/shape-ui-aesthetics-1.0.0-codex.zip -d ~/.codex/skills
+unzip releases/shape-ui-aesthetics/distributions/1.1.0/shape-ui-aesthetics-1.1.0-codex.zip -d ~/.codex/skills
 ```
 
 Inspect an existing installation before replacing it. Do not use the rejected legacy package as a rollback target.
@@ -81,8 +81,8 @@ Inspect an existing installation before replacing it. Do not use the rejected le
 Build only from an accepted immutable release. The builder refuses to overwrite an existing version:
 
 ```bash
-python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1.0.0
-python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.0.0
+python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py build 1.1.0
+python3 evaluation/shape-ui-aesthetics/package_platform_distributions.py validate 1.1.0
 ```
 
 `SKILL.md` remains byte-identical across Codex and Claude Code archives; only Codex-specific `agents/openai.yaml` is omitted from the Claude Code archive.
@@ -96,12 +96,12 @@ CI also compares the change with its base Git ref, rejects edits to any stable r
 ```bash
 python3 -m pip install -r requirements-dev.txt
 python3 tools/validate_repository.py --mode candidate
-python3 tools/validate_repository.py --mode release --version 1.0.0
+python3 tools/validate_repository.py --mode release --version 1.1.0
 ```
 
 ## Status
 
-The platform-neutral `1.0.0` Runtime Package is accepted for cross-agent distribution. The nine example pages are independently browser-checked at mobile and desktop widths; they are demonstration artifacts, not a replacement for human aesthetic acceptance of future changes.
+The platform-neutral `1.1.0` Runtime Package is accepted for cross-agent distribution. It adds the exemplar recipe layer — five recipes distilled from a 25-site measured design corpus (parameter bands, disciplines, and failure modes, each backed by at least two reference sites) plus a recipe routing index — on top of the unchanged `1.0.0` Stable Spine and 32-capability roster. Recipe trials (two open-source product pages, plus a cross-model comparison on gpt-5.6-sol, gemini-3.6-flash, and MiniMax-M3) received human aesthetic acceptance on 2026-07-26. The nine example pages remain demonstration artifacts, not a replacement for human aesthetic acceptance of future changes.
 
 ## Contributing
 
